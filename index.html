@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v7.0</title>
+  <title>NB Advocacia - Gestão Estratégica v9.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -11,6 +11,8 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <script src="https://unpkg.com/lucide@latest"></script>
   
@@ -22,7 +24,7 @@
 
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     .bg-navy { background-color: #0f172a; }
@@ -32,13 +34,21 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Estilo de Impressão da Ficha */
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
     // --- CONFIGURAÇÃO FIREBASE ---
     const firebaseConfig = {
@@ -57,25 +67,12 @@
     
     const COL_PROCESSOS = 'gestao_processos_nb';
     const COL_USUARIOS = 'credenciais_advocacia';
-    const COL_PROFISSIONAIS = 'equipe_nomes_nb'; // Nova coleção para lista de estagiários/advogados
+    const COL_PROFISSIONAIS = 'equipe_nomes_nb'; 
 
-    // --- LISTAS E CONSTANTES ---
-    const LISTA_RAMOS = [
-        "Cível", "Previdenciário", "Trabalhista", "Penal", "Família e Sucessões", 
-        "Consumidor", "Administrativo", "Tributário", "Empresarial", "Eleitoral", 
-        "Ambiental", "Digital", "Imobiliário", "Militar", "Agrário", "Internacional", 
-        "Marítimo", "Aeronáutico", "Desportivo", "Propriedade Intelectual", "Outros"
-    ];
-
-    const LISTA_ESTADOS = [
-        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", 
-        "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
-    ];
-
-    const LISTA_EQUIPE_PADRAO = [
-        "Evison Nascimento", "Adiellyson Bomfim", 
-        "Manassés Oliveira (Estagiário)", "Bárbara Brenda (Estagiária)"
-    ];
+    // --- LISTAS ---
+    const LISTA_RAMOS = ["Cível", "Previdenciário", "Trabalhista", "Penal", "Família e Sucessões", "Consumidor", "Administrativo", "Tributário", "Empresarial", "Eleitoral", "Ambiental", "Digital", "Imobiliário", "Militar", "Agrário", "Outros"];
+    const LISTA_ESTADOS = ["PE", "PB", "SP", "RJ", "MG", "BA", "AC", "AL", "AP", "AM", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "PA", "PR", "PI", "RN", "RS", "RO", "RR", "SC", "SE", "TO"];
+    const LISTA_EQUIPE_PADRAO = ["Evison Nascimento", "Adiellyson Bomfim", "Manassés Oliveira (Estagiário)", "Bárbara Brenda (Estagiária)"];
 
     // --- ÍCONES ---
     const Icons = {
@@ -91,9 +88,113 @@
       Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>,
       Users: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
       Key: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
-      Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+      Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+      Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+      FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
     };
 
+    // --- COMPONENTES AUXILIARES ---
+    
+    // Gráfico Componente (Chart.js Wrapper)
+    const ChartComponent = ({ type, data, options }) => {
+        const canvasRef = useRef(null);
+        const chartRef = useRef(null);
+        
+        useEffect(() => {
+            if (!canvasRef.current) return;
+            if (chartRef.current) chartRef.current.destroy();
+            chartRef.current = new Chart(canvasRef.current, { type, data, options });
+            return () => { if (chartRef.current) chartRef.current.destroy(); };
+        }, [data, type, options]);
+        
+        return <canvas ref={canvasRef} />;
+    };
+
+    // Modal Ficha
+    const FichaModal = ({ p, onClose }) => {
+        return (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-8 relative min-h-[500px]">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
+                    
+                    {/* CABEÇALHO DA FICHA */}
+                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center">
+                        <div>
+                            <h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1>
+                            <p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p>
+                        </div>
+                        <div className="text-right text-xs text-slate-500">
+                            <p>Ficha Gerada em: {new Date().toLocaleDateString()}</p>
+                            <p>ID: {p.id.slice(0,8)}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* SEÇÃO 1: CLIENTE */}
+                        <div className="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div>
+                                <div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div>
+                                <div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div>
+                                <div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
+                            </div>
+                        </div>
+
+                        {/* SEÇÃO 2: PROCESSO */}
+                        <div className="border border-slate-200 p-4 rounded">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div>
+                                <div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
+                                <div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>
+                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div>
+                                <div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                            </div>
+                        </div>
+
+                        {/* SEÇÃO 3: DETALHES ESPECÍFICOS E FINANCEIRO */}
+                        <div className="grid grid-cols-2 gap-6">
+                            {p.ramo === 'Previdenciário' && (
+                                <div className="border border-blue-100 bg-blue-50/30 p-4 rounded">
+                                    <h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3>
+                                    <ul className="text-xs space-y-1">
+                                        <li><b>Benefício:</b> {p.patologia}</li>
+                                        <li><b>Login GOV:</b> {p.govLogin}</li>
+                                        <li><b>Senha GOV:</b> {p.govSenha}</li>
+                                        <li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li>
+                                    </ul>
+                                </div>
+                            )}
+                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded">
+                                <h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3>
+                                <div className="text-sm">
+                                    <p><span className="font-bold">Valor:</span> {p.valorContrato}</p>
+                                    <p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p>
+                                    <p><span className="font-bold">Status:</span> {p.statusPagamento}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RODAPÉ */}
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
+                        <p>Documento para uso interno e acompanhamento processual.</p>
+                        <p>NB Advocacia - Todos os direitos reservados.</p>
+                    </div>
+
+                    <div className="absolute bottom-8 right-8 no-print">
+                        <button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2">
+                            <Icons.Check/> IMPRIMIR / SALVAR PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // --- FUNÇÕES UTILS ---
     const formatCPF = (v) => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
     const openWhatsApp = (phone) => {
@@ -113,16 +214,10 @@
             if (!dataInicial || !dias) return;
             const dt = new Date(dataInicial);
             dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
-            let count = 0;
-            const target = parseInt(dias);
+            let count = 0; const target = parseInt(dias);
             while (count < target) {
                 dt.setDate(dt.getDate() + 1);
-                if (tipo === 'uteis') {
-                    const day = dt.getDay();
-                    if (day !== 0 && day !== 6) count++;
-                } else {
-                    count++;
-                }
+                if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; }
             }
             setResultado(dt.toLocaleDateString('pt-BR'));
         };
@@ -130,31 +225,13 @@
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                    <div className="bg-navy p-4 flex justify-between items-center text-white">
-                        <h3 className="font-bold flex gap-2 items-center text-lg"><Icons.Calculator/> Calculadora de Prazo</h3>
-                        <button onClick={onClose}><Icons.X/></button>
-                    </div>
+                    <div className="bg-navy p-4 flex justify-between items-center text-white"><h3 className="font-bold flex gap-2"><Icons.Calculator/> Calculadora</h3><button onClick={onClose}><Icons.X/></button></div>
                     <div className="p-6 space-y-4">
-                        <div className="text-center text-sm text-slate-500 mb-4 font-semibold uppercase tracking-wide">Simulador de Prazos</div>
-                        <div className="pt-2 border-t">
-                             <label className="text-xs font-bold text-slate-700 uppercase block mb-1">Data da Publicação</label>
-                             <input type="date" className="w-full p-3 border rounded text-lg text-center font-bold text-navy" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
-                        </div>
-                        <div>
-                             <label className="text-xs font-bold text-slate-700 uppercase block mb-1">Prazo em Dias</label>
-                             <input type="number" className="w-full p-3 border rounded text-lg text-center font-bold text-navy" placeholder="0" value={dias} onChange={e=>setDias(e.target.value)}/>
-                        </div>
-                        <div className="flex justify-center gap-6 py-2">
-                             <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} /> <span className="font-bold text-slate-700">Úteis</span></label>
-                             <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} /> <span className="font-bold text-slate-700">Corridos</span></label>
-                        </div>
-                        <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-3 rounded hover:bg-orange-700 shadow-lg transition">CALCULAR PRAZO FINAL</button>
-                        {resultado && (
-                            <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4">
-                                <p className="text-xs text-green-700 font-bold uppercase">Data Final do Prazo</p>
-                                <p className="text-3xl font-bold text-green-800">{resultado}</p>
-                            </div>
-                        )}
+                        <div><label className="text-xs font-bold text-slate-500">Publicação</label><input type="date" className="w-full p-2 border rounded" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/></div>
+                        <div><label className="text-xs font-bold text-slate-500">Dias</label><input type="number" className="w-full p-2 border rounded" value={dias} onChange={e=>setDias(e.target.value)}/></div>
+                        <div className="flex gap-4 justify-center"><label><input type="radio" name="t" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')}/> Úteis</label><label><input type="radio" name="t" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')}/> Corridos</label></div>
+                        <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2 rounded">CALCULAR</button>
+                        {resultado && <div className="bg-green-50 p-2 rounded text-center text-green-800 font-bold mt-2">{resultado}</div>}
                     </div>
                 </div>
             </div>
@@ -170,37 +247,29 @@
       const handle = async (e) => {
         e.preventDefault();
         if (user === "NB ADVOCACIA" && pass === "NB07242530") { onLogin(user, "master"); return; }
-        
         try {
             const doc = await db.collection(COL_USUARIOS).doc(user).get();
-            if (doc.exists && doc.data().senha === pass) {
-                onLogin(user, doc.data().role || 'viewer');
-            } else {
-                setError("Dados incorretos.");
-            }
+            if (doc.exists && doc.data().senha === pass) onLogin(user, doc.data().role || 'viewer');
+            else setError("Dados incorretos.");
         } catch(e) { setError("Erro de conexão."); }
       };
 
       return (
         <div className="min-h-screen bg-navy flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in">
-            <div className="text-center mb-6">
-              <div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div>
-              <h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2>
-              <p className="text-xs text-slate-500 uppercase tracking-widest">Acesso Restrito</p>
-            </div>
+            <div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
             <form onSubmit={handle} className="space-y-4">
-              <input className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
-              <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
+              <input className="w-full p-3 border rounded" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
+              <input type="password" className="w-full p-3 border rounded" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              <button className="w-full bg-navy text-white py-3 rounded font-bold hover:bg-slate-800 transition">ENTRAR</button>
+              <button className="w-full bg-navy text-white py-3 rounded font-bold">ENTRAR</button>
             </form>
           </div>
         </div>
       );
     };
 
-    // --- APP PRINCIPAL ---
+    // --- APP ---
     const AppContent = () => {
       const [authOk, setAuthOk] = useState(false);
       const [user, setUser] = useState("");
@@ -208,34 +277,31 @@
       const [processos, setProcessos] = useState([]);
       const [busca, setBusca] = useState("");
       const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
-      const [aba, setAba] = useState('processos');
+      const [aba, setAba] = useState('dashboard'); // Padrão agora é Dashboard
 
-      // Modais
       const [modal, setModal] = useState(false);
+      const [fichaModal, setFichaModal] = useState(null); // Estado para abrir a ficha
       const [calcModal, setCalcModal] = useState(false);
       const [editingId, setEditingId] = useState(null);
       
-      // Gestão Master
       const [modalSenha, setModalSenha] = useState(false);
       const [novaSenha, setNovaSenha] = useState("");
       const [listaUsuarios, setListaUsuarios] = useState([]);
       const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
       
-      // Lista Dinâmica de Profissionais
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoMembro, setNovoMembro] = useState("");
 
       const initialForm = {
-        cliente: "", cpf: "", telefone: "", descricao: "", estado: "PE", cidade: "",
+        cliente: "", cpf: "", telefone: "", descricao: "", 
+        rua: "", numero: "", bairro: "", cidade: "", estado: "PE",
+        parteContraria: "", tipoParteContraria: "Pessoa Física",
         numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Evison Nascimento",
         prazo: "", statusProcessual: "Em Andamento",
         patologia: "", govLogin: "", govSenha: "", 
-        dataEntrada: "", statusBeneficio: "Em Análise", 
-        dataPericia: "", dataSocial: "",
-        procuracaoEntregue: false, linkProcuracao: "",
-        contratoEntregue: false, linkContrato: "",
-        tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", 
-        valorContrato: "", dataPagamento: "", statusPagamento: "Pendente"
+        dataEntrada: "", statusBeneficio: "Em Análise", dataPericia: "", dataSocial: "",
+        procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "",
+        tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", valorContrato: "", statusPagamento: "Pendente"
       };
       const [formData, setFormData] = useState(initialForm);
 
@@ -244,86 +310,42 @@
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously();
-        
-        // Carrega Processos
-        const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => {
-            setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()})));
-        });
-
-        // Carrega Lista de Equipe (Nomes Dropdown)
+        const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
         const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => {
             if (doc.exists && doc.data().nomes) setListaEquipe(doc.data().nomes);
             else db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: LISTA_EQUIPE_PADRAO });
         });
-
         return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
-      // Carregar Usuários (Só Master na aba Equipe)
       useEffect(() => {
         if (aba === 'equipe' && role === 'master') {
-            db.collection(COL_USUARIOS).get().then(snap => {
-                setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()})));
-            });
+            db.collection(COL_USUARIOS).get().then(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
         }
       }, [aba, role]);
 
-      // --- MASTER FUNCTIONS ---
-      const adicionarMembroEquipe = async () => {
-          if (!novoMembro) return;
-          const novaLista = [...listaEquipe, novoMembro];
-          await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: novaLista });
-          setNovoMembro("");
-          alert("Profissional adicionado à lista!");
-      };
+      // --- GRÁFICOS E METRICAS ---
+      const stats = useMemo(() => {
+          const total = processos.length;
+          const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento').length;
+          const conclusos = processos.filter(p => p.statusProcessual === 'Concluso').length;
+          
+          // Contagem por Ramo para o Gráfico
+          const ramosCount = {};
+          processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
+          
+          return { total, ativos, conclusos, ramosCount };
+      }, [processos]);
 
-      const removerMembroEquipe = async (nome) => {
-          if(!confirm("Remover este nome da lista?")) return;
-          const novaLista = listaEquipe.filter(n => n !== nome);
-          await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: novaLista });
-      };
-
-      const alterarSenha = async () => {
-        if (!novaSenha || novaSenha.length < 4) return alert("Senha curta.");
-        await db.collection(COL_USUARIOS).doc(user).set({ senha: novaSenha }, { merge: true });
-        alert("Senha alterada!"); setModalSenha(false); setNovaSenha("");
-      };
-
-      const salvarUsuario = async () => {
-         if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo.");
-         await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role });
-         alert("Usuário salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"});
-         const snap = await db.collection(COL_USUARIOS).get();
-         setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()})));
-      };
-
-      const excluirUsuario = async (id) => {
-          if (!confirm("Remover usuário?")) return;
-          await db.collection(COL_USUARIOS).doc(id).delete();
-          const snap = await db.collection(COL_USUARIOS).get();
-          setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()})));
-      };
-
-      // --- CRUD PROCESSOS ---
-      const salvar = async () => {
-        if (!formData.cliente) return alert("Nome do cliente obrigatório.");
-        try {
-            if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData);
-            else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()});
-            setModal(false); setEditingId(null); setFormData(initialForm);
-        } catch (e) { alert("Erro ao salvar."); }
-      };
-
+      const adicionarMembroEquipe = async () => { if (!novoMembro) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: [...listaEquipe, novoMembro] }); setNovoMembro(""); };
+      const removerMembroEquipe = async (nome) => { if(!confirm("Remover?")) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: listaEquipe.filter(n => n !== nome) }); };
+      const alterarSenha = async () => { if (!novaSenha || novaSenha.length < 4) return alert("Senha curta."); await db.collection(COL_USUARIOS).doc(user).set({ senha: novaSenha }, { merge: true }); alert("Senha alterada!"); setModalSenha(false); setNovaSenha(""); };
+      const salvarUsuario = async () => { if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo."); await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role }); alert("Salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"}); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
+      const excluirUsuario = async (id) => { if (!confirm("Remover?")) return; await db.collection(COL_USUARIOS).doc(id).delete(); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
+      const salvar = async () => { if (!formData.cliente) return alert("Nome do cliente obrigatório."); try { if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData); else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()}); setModal(false); setEditingId(null); setFormData(initialForm); } catch (e) { alert("Erro ao salvar."); } };
       const apagar = async (id) => { if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
-      
-      const exportar = () => {
-          const ws = XLSX.utils.json_to_sheet(processos);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Processos");
-          XLSX.writeFile(wb, "Processos_NB.xlsx");
-      };
+      const exportar = () => { const ws = XLSX.utils.json_to_sheet(processos); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Processos"); XLSX.writeFile(wb, "Processos_NB.xlsx"); };
 
-      // FILTRAGEM
       const processosFiltrados = processos.filter(p => {
           const matchBusca = p.cliente.toLowerCase().includes(busca.toLowerCase()) || (p.cpf && p.cpf.includes(busca));
           const matchResp = filtroResponsavel === "Todos" || p.advogado === filtroResponsavel;
@@ -337,84 +359,51 @@
           <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm flex justify-between items-center no-print">
              <div className="flex items-center gap-3">
                  <div className="text-yellow-600"><Icons.Scale /></div>
-                 <div>
-                     <h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1>
-                     <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role === 'master' ? 'Painel Mestre' : `Dr(a). ${user}`}</span>
-                 </div>
+                 <div><h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1><span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role === 'master' ? 'Painel Mestre' : `Dr(a). ${user}`}</span></div>
              </div>
              <div className="flex gap-2 items-center">
-                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200">
-                    <Icons.Calculator/> <span className="hidden md:inline">Calc. Prazo</span>
-                 </button>
-                 
-                 {role === 'master' ? (
-                     <button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>
-                        <Icons.Users/> Equipe
-                     </button>
-                 ) : (
-                     <button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Key/> Senha</button>
-                 )}
-                 
+                 <button onClick={()=>setAba('dashboard')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
                  <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='processos'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>Processos</button>
-
-                 {(role !== 'viewer' && aba === 'processos') && (
-                     <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} 
-                             className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors">
-                        <Icons.Plus/> NOVO
-                     </button>
-                 )}
+                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Calculator/> Calc</button>
+                 {role === 'master' ? (<button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>) : (<button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Key/> Senha</button>)}
+                 {(role !== 'viewer') && (<button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors"><Icons.Plus/> NOVO</button>)}
              </div>
           </header>
 
           <main className="max-w-7xl mx-auto px-6 py-8">
              {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
+             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
+
+             {/* ABA DASHBOARD (GRÁFICOS) */}
+             {aba === 'dashboard' && (
+                 <div className="space-y-6 fade-in">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3 className="text-xs font-bold text-slate-500 uppercase">Total de Processos</h3><p className="text-3xl font-bold text-slate-800">{stats.total}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Em Andamento</h3><p className="text-3xl font-bold text-blue-600">{stats.ativos}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Conclusos</h3><p className="text-3xl font-bold text-green-600">{stats.conclusos}</p></div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80">
+                             <h4 className="font-bold text-slate-700 mb-4">Áreas de Atuação (Onde investir?)</h4>
+                             <div className="h-60 flex justify-center">
+                                 <ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} />
+                             </div>
+                         </div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80">
+                             <h4 className="font-bold text-slate-700 mb-4">Volume de Processos</h4>
+                             <div className="h-60">
+                                 <ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }} />
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             )}
 
              {/* ABA EQUIPE (SÓ MESTRE) */}
              {aba === 'equipe' && role === 'master' && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-                    {/* COLUNA 1: LOGINS */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3>
-                        <div className="bg-slate-50 p-4 rounded border mb-4">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Novo Login</h4>
-                            <div className="space-y-2">
-                                <input className="w-full p-2 border rounded" placeholder="Nome (Login)" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
-                                <div className="flex gap-2">
-                                    <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
-                                    <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
-                                        <option value="viewer">Visualizador</option><option value="admin">Admin</option>
-                                    </select>
-                                    <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button>
-                                </div>
-                            </div>
-                        </div>
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead>
-                            <tbody>
-                                {listaUsuarios.map(u => (
-                                    <tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* COLUNA 2: DROPDOWN NOMES */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico (Dropdown)</h3>
-                        <p className="text-xs text-slate-500 mb-4">Adicione aqui os nomes que aparecerão na lista de "Advogado Responsável" (inclusive estagiários).</p>
-                        <div className="flex gap-2 mb-4">
-                            <input className="flex-1 p-2 border rounded" placeholder="Nome Completo (ex: Fulano Estagiário)" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
-                            <button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button>
-                        </div>
-                        <ul className="divide-y border rounded">
-                            {listaEquipe.map((nome, i) => (
-                                <li key={i} className="p-3 flex justify-between items-center bg-slate-50">
-                                    <span className="font-bold text-slate-700">{nome}</span>
-                                    <button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3><div className="bg-slate-50 p-4 rounded border mb-4 space-y-2"><input className="w-full p-2 border rounded" placeholder="Nome" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/><div className="flex gap-2"><input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/><select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select><button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button></div></div><table className="w-full text-sm text-left"><thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead><tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>))}</tbody></table></div>
+                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico</h3><div className="flex gap-2 mb-4"><input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/><button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button></div><ul className="divide-y border rounded">{listaEquipe.map((nome, i) => (<li key={i} className="p-3 flex justify-between items-center bg-slate-50"><span className="font-bold text-slate-700">{nome}</span><button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button></li>))}</ul></div>
                  </div>
              )}
 
@@ -422,46 +411,25 @@
              {aba === 'processos' && (
                  <div className="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
                      <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
-                         <div className="relative flex-1 w-full">
-                            <span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search/></span>
-                            <input type="text" placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full focus:outline-none focus:border-navy focus:ring-1 focus:ring-navy" value={busca} onChange={e => setBusca(e.target.value)} />
-                         </div>
-                         
-                         {/* FILTRO RESPONSÁVEL */}
-                         <div className="flex items-center gap-2 w-full md:w-auto">
-                             <div className="relative w-full md:w-60">
-                                 <span className="absolute left-3 top-2.5 text-slate-400"><Icons.Filter/></span>
-                                 <select className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full bg-white font-bold text-slate-600 outline-none focus:border-navy" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}>
-                                     <option value="Todos">Todos os Responsáveis</option>
-                                     {listaEquipe.map(nome => <option key={nome} value={nome}>Apenas {nome.split(' ')[0]}</option>)}
-                                 </select>
-                             </div>
-                             <button onClick={exportar} className="flex items-center gap-1 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded hover:bg-green-100"><Icons.Excel/> Excel</button>
-                         </div>
+                         <div className="relative flex-1 w-full"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search/></span><input type="text" placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full outline-none focus:border-navy" value={busca} onChange={e => setBusca(e.target.value)} /></div>
+                         <div className="flex items-center gap-2 w-full md:w-auto"><div className="relative w-full md:w-60"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Filter/></span><select className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full bg-white font-bold text-slate-600 outline-none focus:border-navy" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}><option value="Todos">Todos os Responsáveis</option>{listaEquipe.map(nome => <option key={nome} value={nome}>Apenas {nome.split(' ')[0]}</option>)}</select></div><button onClick={exportar} className="flex items-center gap-1 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded hover:bg-green-100"><Icons.Excel/> Excel</button></div>
                      </div>
                      <div className="overflow-x-auto">
                          <table className="w-full text-sm text-left whitespace-nowrap">
-                             <thead className="bg-slate-100 text-slate-500 font-bold border-b">
-                                 <tr><th>Status</th><th>Cliente / Local</th><th>Processo/Ramo</th><th>Resp.</th><th>Prazo</th><th>Financeiro</th><th className="text-center">Ações</th></tr>
-                             </thead>
+                             <thead className="bg-slate-100 text-slate-500 font-bold border-b"><tr><th>Status</th><th>Cliente / Local</th><th>Processo/Ramo</th><th>Resp.</th><th>Prazo</th><th>Financeiro</th><th className="text-center">Ações</th></tr></thead>
                              <tbody className="divide-y">
                                  {processosFiltrados.map(p => (
                                      <tr key={p.id} className="hover:bg-slate-50">
                                          <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${p.statusProcessual==='Concluso'?'bg-green-100 text-green-700':'bg-blue-50 text-blue-700'}`}>{p.statusProcessual}</span></td>
-                                         <td className="px-4 py-3">
-                                             <div className="font-bold text-slate-700 flex items-center gap-2">{p.cliente} {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500"><Icons.WhatsApp/></button>}</div>
-                                             <div className="text-xs text-slate-400">{p.cidade} - {p.estado}</div>
-                                         </td>
-                                         <td className="px-4 py-3">
-                                             <div className="text-slate-700 font-mono text-xs">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div>
-                                             <div className="text-xs text-slate-400">{p.ramo}</div>
-                                         </td>
+                                         <td className="px-4 py-3"><div className="font-bold text-slate-700 flex items-center gap-2">{p.cliente} {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500"><Icons.WhatsApp/></button>}</div><div className="text-xs text-slate-400">{p.cidade} - {p.estado}</div></td>
+                                         <td className="px-4 py-3"><div className="text-slate-700 font-mono text-xs">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div><div className="text-xs text-slate-400">{p.ramo}</div></td>
                                          <td className="px-4 py-3 text-slate-600 font-medium">{p.advogado}</td>
                                          <td className="px-4 py-3 text-red-600 font-bold">{p.prazo ? new Date(p.prazo).toLocaleDateString() : '-'}</td>
                                          <td className="px-4 py-3"><div className="text-xs">{p.valorContrato || '0,00'}</div><span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span></td>
                                          <td className="px-4 py-3 text-center flex justify-center gap-2">
-                                             <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-400 hover:text-navy"><Icons.Edit/></button>
-                                             {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-slate-300 hover:text-red-500"><Icons.Trash/></button>}
+                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy" title="Ver Ficha"><Icons.FileText/></button>
+                                             <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-400 hover:text-navy" title="Editar"><Icons.Edit/></button>
+                                             {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-slate-300 hover:text-red-500" title="Excluir"><Icons.Trash/></button>}
                                          </td>
                                      </tr>
                                  ))}
@@ -472,129 +440,33 @@
              )}
           </main>
 
-          {/* MODAL ALTERAR SENHA (USUÁRIO COMUM) */}
-          {modalSenha && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
-                    <h3 className="font-bold text-lg text-slate-800 mb-4 flex gap-2 items-center"><Icons.Key/> Alterar Minha Senha</h3>
-                    <input type="password" placeholder="Nova Senha" className="w-full p-2 border rounded mb-4" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
-                    <div className="flex gap-2">
-                        <button onClick={()=>setModalSenha(false)} className="flex-1 py-2 border rounded hover:bg-slate-50">Cancelar</button>
-                        <button onClick={alterarSenha} className="flex-1 py-2 bg-navy text-white rounded font-bold hover:bg-slate-800">Salvar</button>
-                    </div>
-                </div>
-            </div>
-          )}
+          {/* MODAL SENHA */}
+          {modalSenha && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6"><h3 className="font-bold text-lg text-slate-800 mb-4 flex gap-2 items-center"><Icons.Key/> Alterar Minha Senha</h3><input type="password" placeholder="Nova Senha" className="w-full p-2 border rounded mb-4" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/><div className="flex gap-2"><button onClick={()=>setModalSenha(false)} className="flex-1 py-2 border rounded hover:bg-slate-50">Cancelar</button><button onClick={alterarSenha} className="flex-1 py-2 bg-navy text-white rounded font-bold hover:bg-slate-800">Salvar</button></div></div></div>)}
 
           {/* MODAL FORMULÁRIO */}
           {modal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
                 <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="bg-navy px-6 py-4 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2 text-yellow-500"><Icons.Scale /><h3 className="text-lg font-bold text-white tracking-wide">{editingId ? 'EDITAR' : 'NOVO CADASTRO'}</h3></div>
-                        <button onClick={()=>setModal(false)} className="text-slate-400 hover:text-white"><Icons.X /></button>
-                    </div>
-                    
+                    <div className="bg-navy px-6 py-4 flex justify-between items-center shrink-0"><div className="flex items-center gap-2 text-yellow-500"><Icons.Scale /><h3 className="text-lg font-bold text-white tracking-wide">{editingId ? 'EDITAR' : 'NOVO CADASTRO'}</h3></div><button onClick={()=>setModal(false)} className="text-slate-400 hover:text-white"><Icons.X /></button></div>
                     <div className="p-6 overflow-y-auto custom-scrollbar space-y-5">
                         <div className="space-y-3">
                             <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cliente</label><input className="w-full p-2 border rounded bg-slate-50 font-bold text-slate-700 outline-none focus:border-yellow-600" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/></div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">CPF</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div>
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Telefone</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div>
-                            </div>
-                            
-                            {/* ESTADOS E CIDADES */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">UF</label>
-                                    <select className="w-full p-2 border rounded bg-white" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>
-                                        {LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cidade</label><input className="w-full p-2 border rounded" placeholder="Nome da cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div>
-                            </div>
-
-                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição do Caso</label><textarea className="w-full p-2 border rounded text-sm h-20 resize-none outline-none focus:border-yellow-600" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
+                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">CPF</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Telefone</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div></div>
+                            <div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">UF</label><select className="w-full p-2 border rounded bg-white" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cidade</label><input className="w-full p-2 border rounded" placeholder="Nome da cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div></div>
+                            <div className="grid grid-cols-3 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Rua</label><input className="w-full p-2 border rounded" value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Nº</label><input className="w-full p-2 border rounded" value={formData.numero} onChange={e=>setFormData({...formData, numero: e.target.value})}/></div><div className="col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Bairro</label><input className="w-full p-2 border rounded" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div></div>
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><textarea className="w-full p-2 border rounded text-sm h-20 resize-none outline-none focus:border-yellow-600" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
                         </div>
-
                         <hr className="border-slate-100"/>
-
                         <div className="space-y-3">
-                            <div className="flex items-center gap-4 mb-2">
-                                <label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Ramo:</label>
-                                <select className="p-1 border rounded text-sm font-bold text-navy" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>
-                                    {LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}
-                                </select>
-                            </div>
-
-                            {/* PREVIDENCIÁRIO */}
-                            {formData.ramo === 'Previdenciário' ? (
-                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
-                                    <h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="col-span-2 flex items-center gap-2">
-                                        <input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span>
-                                    </div>
-                                    {!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}
-                                </div>
-                            )}
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label>
-                                    <select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>
-                                        {listaEquipe.map(nome => <option key={nome}>{nome}</option>)}
-                                    </select>
-                                </div>
-                                <div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div>
-                                <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div>
-                            </div>
+                            <div className="flex items-center gap-4 mb-2"><label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Ramo:</label><select className="p-1 border rounded text-sm font-bold text-navy" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select></div>
+                            <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-3"><h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div></div></div>
+                            {formData.ramo === 'Previdenciário' ? (<div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div></div></div>) : (<div className="grid grid-cols-2 gap-3"><div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span></div>{!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}</div>)}
+                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div><div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div></div>
                         </div>
-
-                        {/* ANEXOS (LINKS) */}
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                             <div className="flex items-center gap-2 mb-2"><span className="text-xs font-bold text-slate-600 uppercase">Anexos (Links Nuvem)</span></div>
-                             <div className="space-y-2">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Procuração</span></div>
-                                    <input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/>
-                                </div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Contrato</span></div>
-                                    <input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/>
-                                </div>
-                             </div>
-                        </div>
-
-                        {/* FINANCEIRO */}
-                        <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100">
-                             <h4 className="text-xs font-bold text-orange-800 uppercase mb-2">Honorários</h4>
-                             <div className="grid grid-cols-2 gap-3 mb-2">
-                                 <div><label className="text-[10px] font-bold text-slate-400">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div>
-                                 <div><label className="text-[10px] font-bold text-slate-400">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div>
-                             </div>
-                             {formData.tipoPagamento === 'Parcelado' ? (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div><label className="text-[10px] font-bold text-slate-400">Qtd</label><input type="number" className="w-full p-2 border rounded text-sm" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div>
-                                    <div><label className="text-[10px] font-bold text-slate-400">Valor Parc.</label><input className="w-full p-2 border rounded text-sm" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div>
-                                </div>
-                             ) : (
-                                <div><label className="text-[10px] font-bold text-slate-400">Valor Total</label><input className="w-full p-2 border rounded text-sm font-bold" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>
-                             )}
-                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200"><div className="flex items-center gap-2 mb-2"><span className="text-xs font-bold text-slate-600 uppercase">Anexos (Links Nuvem)</span></div><div className="space-y-2"><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Procuração</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/></div><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Contrato</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/></div></div></div>
+                        <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100"><h4 className="text-xs font-bold text-orange-800 uppercase mb-2">Honorários</h4><div className="grid grid-cols-2 gap-3 mb-2"><div><label className="text-[10px] font-bold text-slate-400">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div><div><label className="text-[10px] font-bold text-slate-400">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div></div>{formData.tipoPagamento === 'Parcelado' ? (<div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400">Qtd</label><input type="number" className="w-full p-2 border rounded text-sm" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400">Valor Parc.</label><input className="w-full p-2 border rounded text-sm" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div></div>) : (<div><label className="text-[10px] font-bold text-slate-400">Valor Total</label><input className="w-full p-2 border rounded text-sm font-bold" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>)}</div>
                     </div>
-
-                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0">
-                        <button onClick={()=>setModal(false)} className="flex-1 py-3 rounded-lg border text-slate-500 font-bold hover:bg-slate-100 transition">CANCELAR</button>
-                        <button onClick={salvar} className="flex-[2] py-3 rounded-lg bg-navy text-white font-bold hover:bg-slate-800 shadow transition flex items-center justify-center gap-2"><Icons.Check/> SALVAR</button>
-                    </div>
+                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 rounded-lg border text-slate-500 font-bold hover:bg-slate-100 transition">CANCELAR</button><button onClick={salvar} className="flex-[2] py-3 rounded-lg bg-navy text-white font-bold hover:bg-slate-800 shadow transition flex items-center justify-center gap-2"><Icons.Check/> SALVAR</button></div>
                 </div>
             </div>
           )}
