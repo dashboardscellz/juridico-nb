@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v18.4 (Fixed)</title>
+  <title>NB Advocacia - Premium v19.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -16,37 +16,67 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  <style>
-    body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    .bg-navy { background-color: #0f172a; }
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            navy: {
+              800: '#1e293b',
+              900: '#0f172a',
+            },
+            gold: {
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
+    .font-serif { font-family: 'Playfair Display', serif; }
+    
+    .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .glass-header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Scrollbar elegante */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    @keyframes pulse-green {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(1.4); }
-    }
-    .pulse-green { animation: pulse-green 1.5s infinite; }
+    @keyframes pulse-green { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
+    .pulse-green { animation: pulse-green 2s infinite; }
 
-    @keyframes slideInRow {
-      from { opacity: 0; transform: translateX(-12px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-    .audit-row-new { animation: slideInRow 0.4s ease-out; }
+    .audit-row-new { animation: slideInRow 0.5s ease-out; background-color: #fffbeb !important; }
+    @keyframes slideInRow { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* Efeitos de Hover nos Cards */
+    .hover-card { transition: all 0.3s ease; }
+    .hover-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
 
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area { 
-        position: absolute; left: 0; top: 0; width: 100%; height: auto !important; 
-        max-height: none !important; overflow: visible !important; padding: 20px; 
-        background: white; box-shadow: none;
-      }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; padding: 0; background: white; box-shadow: none; }
       .no-print { display: none !important; }
     }
   </style>
@@ -57,7 +87,6 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // --- CONFIGURAÇÃO FIREBASE ---
     const firebaseConfig = {
       apiKey: "AIzaSyCC1jE63rpMAu_5rfCe5IVhB_ysYCo1bd0",
       authDomain: "ab-advocacia.firebaseapp.com",
@@ -77,7 +106,6 @@
     const COL_PROFISSIONAIS= 'equipe_nomes_nb'; 
     const COL_AUDITORIA    = 'auditoria_acessos_nb';
 
-    // --- DADOS ---
     const DADOS_ESTADOS = {
         "Pernambuco": ["Recife","Jaboatão dos Guararapes","Olinda","Caruaru","Petrolina","Paulista","Cabo de Santo Agostinho","Camaragibe","Garanhuns","Vitória de Santo Antão","Igarassu","São Lourenço da Mata","Abreu e Lima","Santa Cruz do Capibaribe","Ipojuca","Serra Talhada","Araripina","Gravatá","Carpina","Goiana","Belo Jardim","Arcoverde","Ouricuri","Escada","Pesqueira","Surubim","Palmares","Moreno","Bezerros","Salgueiro","São Bento do Una","Buíque","Paudalho","Limoeiro","Timbaúba","Brejo da Madre de Deus","Bom Conselho","Ribeirão","Sirinhaém","Águas Belas","Lajedo","Bonito","Toritama","Catende","Barreiros","Santa Maria da Boa Vista","Bom Jardim","São José do Belmonte","Bodocó","Afogados da Ingazeira"],
         "Paraíba": ["João Pessoa","Campina Grande","Santa Rita","Patos","Bayeux","Sousa","Cajazeiras","Cabedelo","Guarabira","Sapé","Queimadas","Mamanguape","Pombal","Monteiro","São Bento","Esperança","Catolé do Rocha","Pedras de Fogo","Lagoa Seca","Conde"],
@@ -88,13 +116,12 @@
     const LISTA_RAMOS = ["Cível","Previdenciário","Trabalhista","Penal","Família e Sucessões","Consumidor","Administrativo","Tributário","Empresarial","Eleitoral","Ambiental","Digital","Imobiliário","Militar","Agrário","Outros"];
     const LISTA_EQUIPE_PADRAO = ["Evison Nascimento","Adiellyson Bomfim","Manassés Oliveira (Estagiário)","Bárbara Brenda (Estagiária)"];
 
-    // --- ÍCONES ---
     const Icons = {
-      Scale: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>,
+      Scale: () => <svg className="w-full h-full" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>,
       WhatsApp: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.867-2.031-.967-.272-.099-.47-.149-.669.198-.199.347-.768.967-.941 1.165-.173.199-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>,
       Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>,
       Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>,
-      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>,
+      X: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>,
       Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
       Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>,
       Excel: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
@@ -106,39 +133,14 @@
       FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
       Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>,
       LogOut: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
-      Audit: () => (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-        </svg>
-      ),
-      LoginIn: () => (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-        </svg>
-      ),
-      LoginOut: () => (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-      ),
-      Clock: () => (
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
-        </svg>
-      ),
-      Download: () => (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-      ),
-      Calculator: () => (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-        </svg>
-      ),
+      Audit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
+      LoginIn: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>,
+      LoginOut: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
+      Clock: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/></svg>,
+      Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
+      Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>,
     };
 
-    // --- AUDITORIA ---
     const registrarAuditoria = async (usuario, acao, role = '') => {
       try {
         const agora = new Date();
@@ -149,7 +151,7 @@
           hora: agora.toLocaleTimeString('pt-BR'),
           epoch: agora.getTime()
         });
-      } catch (e) { console.error("Erro ao registrar auditoria:", e); }
+      } catch (e) { console.error("Erro auditoria:", e); }
     };
 
     const AuditoriaModal = ({ onClose, isMaster }) => {
@@ -202,53 +204,50 @@
       return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 fade-in">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-            <div className="bg-[#0f172a] px-6 py-4 flex justify-between items-center shrink-0">
+            <div className="bg-[#0f172a] px-6 py-4 flex justify-between items-center shrink-0 border-b border-slate-700">
               <div className="flex items-center gap-3">
-                <div className="bg-yellow-500/20 p-2 rounded-lg"><Icons.Audit /></div>
-                <div><h2 className="text-white font-bold text-lg tracking-wide">AUDITORIA DE ACESSOS</h2><p className="text-slate-400 text-xs">Monitoramento em tempo real · NB Advocacia</p></div>
-                <div className="flex items-center gap-1.5 bg-green-900/40 border border-green-700/50 px-3 py-1 rounded-full ml-2"><span className="w-2 h-2 rounded-full bg-green-400 pulse-green inline-block"></span><span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">AO VIVO</span></div>
+                <div className="bg-gold-500/20 p-2 rounded-lg text-gold-500"><Icons.Audit /></div>
+                <div><h2 className="text-white font-serif font-bold text-xl tracking-wide">Auditoria de Acessos</h2><p className="text-slate-400 text-xs">Monitoramento em tempo real</p></div>
+                <div className="flex items-center gap-1.5 bg-green-900/40 border border-green-700/50 px-3 py-1 rounded-full ml-4"><span className="w-2 h-2 rounded-full bg-green-400 pulse-green inline-block"></span><span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">AO VIVO</span></div>
               </div>
-              <button onClick={onClose} className="text-slate-400 hover:text-white transition p-1 rounded hover:bg-slate-700"><Icons.X /></button>
+              <button onClick={onClose} className="text-slate-400 hover:text-white transition p-2 rounded hover:bg-white/10"><Icons.X /></button>
             </div>
-            <div className="grid grid-cols-3 gap-0 border-b bg-slate-50 shrink-0">
-              <div className="p-4 text-center border-r"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total de Registros</p><p className="text-2xl font-extrabold text-slate-700 mt-1">{logs.length}</p></div>
-              <div className="p-4 text-center border-r"><p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Entradas</p><p className="text-2xl font-extrabold text-emerald-600 mt-1">{totalEntradas}</p></div>
-              <div className="p-4 text-center"><p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Saídas</p><p className="text-2xl font-extrabold text-rose-500 mt-1">{totalSaidas}</p></div>
+            <div className="grid grid-cols-3 gap-0 border-b bg-slate-50 shrink-0 divide-x">
+              <div className="p-4 text-center"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total de Registros</p><p className="text-2xl font-serif font-bold text-slate-800 mt-1">{logs.length}</p></div>
+              <div className="p-4 text-center"><p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Entradas</p><p className="text-2xl font-serif font-bold text-emerald-600 mt-1">{totalEntradas}</p></div>
+              <div className="p-4 text-center"><p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Saídas</p><p className="text-2xl font-serif font-bold text-rose-500 mt-1">{totalSaidas}</p></div>
             </div>
-            <div className="px-5 py-3 border-b bg-white flex flex-wrap gap-3 items-center shrink-0">
-              <div className="relative flex-1 min-w-[160px]"><span className="absolute left-2.5 top-2.5 text-slate-400"><Icons.Search /></span><input type="text" placeholder="Filtrar por usuário..." className="pl-8 pr-3 py-2 border rounded-lg text-xs w-full outline-none focus:border-[#0f172a] bg-slate-50" value={filtroUsuario} onChange={e => setFiltroUsuario(e.target.value)}/></div>
-              <select className="border rounded-lg px-3 py-2 text-xs bg-white font-bold text-slate-600 outline-none focus:border-[#0f172a]" value={filtroAcao} onChange={e => setFiltroAcao(e.target.value)}><option value="Todos">Todos os Eventos</option><option value="login">Apenas Entradas</option><option value="logout">Apenas Saídas</option></select>
-              <button onClick={exportarLogs} className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg hover:bg-green-100 transition"><Icons.Download /> Exportar Excel</button>
+            <div className="px-5 py-4 border-b bg-white flex flex-wrap gap-3 items-center shrink-0">
+              <div className="relative flex-1 min-w-[200px]"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search /></span><input type="text" placeholder="Filtrar por usuário..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-full outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-slate-50 transition-all" value={filtroUsuario} onChange={e => setFiltroUsuario(e.target.value)}/></div>
+              <select className="border border-slate-200 rounded-lg px-4 py-2 text-sm bg-white font-medium text-slate-700 outline-none focus:border-navy-900 cursor-pointer" value={filtroAcao} onChange={e => setFiltroAcao(e.target.value)}><option value="Todos">Todos os Eventos</option><option value="login">Apenas Entradas</option><option value="logout">Apenas Saídas</option></select>
+              <button onClick={exportarLogs} className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2 rounded-lg hover:bg-green-100 transition shadow-sm"><Icons.Download /> Exportar</button>
               {isMaster && (
-                <button onClick={limparAuditoria} className="flex items-center gap-1.5 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg hover:bg-rose-100 transition"><Icons.Trash /> Limpar Histórico</button>
+                <button onClick={limparAuditoria} className="flex items-center gap-2 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-4 py-2 rounded-lg hover:bg-rose-100 transition shadow-sm"><Icons.Trash /> Limpar</button>
               )}
             </div>
-            <div className="overflow-y-auto custom-scrollbar flex-1">
+            <div className="overflow-y-auto custom-scrollbar flex-1 bg-white">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-100 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b"><tr><th className="px-5 py-3">Evento</th><th className="px-5 py-3">Usuário</th><th className="px-5 py-3">Perfil</th><th className="px-5 py-3">Data</th><th className="px-5 py-3">Horário</th></tr></thead>
+                <thead className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b"><tr><th className="px-6 py-3">Evento</th><th className="px-6 py-3">Usuário</th><th className="px-6 py-3">Perfil</th><th className="px-6 py-3">Data/Hora</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {logsFiltrados.map((log, idx) => {
                     const isEntrada = log.acao === 'login'; const isNew = newIds.has(log.id);
                     return (
-                      <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${isNew ? 'audit-row-new bg-yellow-50/60' : ''}`}>
-                        <td className="px-5 py-3"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${isEntrada ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>{isEntrada ? <Icons.LoginIn /> : <Icons.LoginOut />} {isEntrada ? 'ENTRADA' : 'SAÍDA'}</span></td>
-                        <td className="px-5 py-3"><div className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${isEntrada ? 'bg-emerald-500' : 'bg-rose-400'}`}>{log.usuario.charAt(0).toUpperCase()}</div><span className="font-semibold text-slate-700">{log.usuario}</span></div></td>
-                        <td className="px-5 py-3"><span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${log.role === 'master' ? 'bg-purple-100 text-purple-700' : log.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>{log.role || 'viewer'}</span></td>
-                        <td className="px-5 py-3 text-slate-600 font-mono text-xs">{log.data || '—'}</td>
-                        <td className="px-5 py-3"><span className="flex items-center gap-1 text-slate-600 font-mono text-xs"><Icons.Clock />{log.hora || '—'}</span></td>
+                      <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${isNew ? 'audit-row-new' : ''}`}>
+                        <td className="px-6 py-3"><span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isEntrada ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>{isEntrada ? <Icons.LoginIn /> : <Icons.LoginOut />} {isEntrada ? 'ENTRADA' : 'SAÍDA'}</span></td>
+                        <td className="px-6 py-3"><div className="flex items-center gap-3"><div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm ${isEntrada ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>{log.usuario.charAt(0).toUpperCase()}</div><span className="font-semibold text-slate-700">{log.usuario}</span></div></td>
+                        <td className="px-6 py-3"><span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md border ${log.role === 'master' ? 'bg-purple-50 text-purple-700 border-purple-200' : log.role === 'admin' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>{log.role || 'viewer'}</span></td>
+                        <td className="px-6 py-3"><div className="text-slate-600 font-medium text-xs">{log.data}</div><div className="text-slate-400 text-[10px] flex items-center gap-1 mt-0.5"><Icons.Clock />{log.hora}</div></td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div className="px-5 py-3 bg-slate-50 border-t text-[11px] text-slate-400 flex justify-between items-center shrink-0"><span>Dados atualizados automaticamente via Firestore</span></div>
           </div>
         </div>
       );
     };
 
-    // --- GRÁFICO E FICHA ---
     const ChartComponent = ({ type, data, options }) => {
         const canvasRef = useRef(null); const chartRef = useRef(null);
         useEffect(() => {
@@ -262,35 +261,40 @@
 
     const FichaModal = ({ p, onClose }) => {
         return (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
-                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center shrink-0">
-                        <div><h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p></div>
-                        <div className="text-right text-xs text-slate-500"><p>Ficha Gerada em: {new Date().toLocaleDateString()}</p><p>ID: {p.id.slice(0,8)}</p></div>
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto print:p-0 print:bg-white print:static fade-in">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-8 relative flex flex-col max-h-[90vh] overflow-y-auto border border-slate-200">
+                    <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 transition no-print"><Icons.X/></button>
+                    <div className="border-b-2 border-navy-900 pb-6 mb-8 flex justify-between items-end shrink-0">
+                        <div><div className="text-gold-600 w-12 h-12 mb-2"><Icons.Scale/></div><h1 className="text-3xl font-serif font-bold text-navy-900 leading-none">NB ADVOCACIA</h1><p className="text-sm text-gold-600 font-bold tracking-[0.2em] uppercase mt-1">Nascimento & Bomfim</p></div>
+                        <div className="text-right text-xs text-slate-500"><p className="font-bold uppercase tracking-wider mb-1">Ficha Processual</p><p>Gerada em: {new Date().toLocaleDateString()}</p><p className="font-mono mt-1">REF: {p.id.slice(0,8).toUpperCase()}</p></div>
                     </div>
-                    <div className="space-y-6 overflow-y-visible">
-                        <div className="bg-slate-50 p-4 rounded border border-slate-200">
-                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div><div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
+                    <div className="space-y-8 overflow-y-visible">
+                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 shadow-sm">
+                            <h3 className="text-sm font-bold text-navy-900 uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Nome Completo</span> <span className="font-semibold text-slate-800 text-base">{p.cliente}</span></div>
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">CPF</span> <span className="font-mono text-slate-700">{p.cpf || '-'}</span></div>
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Telefone</span> <span className="text-slate-700">{p.telefone || '-'}</span></div>
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Localização</span> <span className="text-slate-700">{p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ` : ''}{p.cidade}/{p.estado}</span></div>
                             </div>
                         </div>
-                        <div className="border border-slate-200 p-4 rounded">
-                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
-                                {p.ramo !== 'Previdenciário' && (<div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>)}
-                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                        <div className="border border-slate-200 p-6 rounded-lg shadow-sm">
+                            <h3 className="text-sm font-bold text-navy-900 uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Briefcase/> Detalhes do Processo</h3>
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-8 text-sm">
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Número do Processo</span> <span className="font-mono bg-yellow-50 text-yellow-800 px-2 py-1 rounded border border-yellow-100">{p.numeroProcesso || 'Não Distribuído'}</span></div>
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Área / Ramo</span> <span className="font-semibold text-navy-800">{p.ramo}</span></div>
+                                {p.ramo !== 'Previdenciário' && (<div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Parte Contrária</span> <span className="font-medium text-slate-700">{p.parteContraria}</span> <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>)}
+                                <div><span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Status Atual</span> <span className="font-bold text-slate-800">{p.statusProcessual}</span></div>
+                                <div className="col-span-2 mt-2"><span className="text-[10px] font-bold text-slate-400 uppercase block mb-2">Descrição do Caso</span> <p className="text-slate-600 bg-slate-50 p-3 rounded border border-slate-100 leading-relaxed italic">{p.descricao || 'Sem descrição.'}</p></div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6">
-                            {p.ramo === 'Previdenciário' && (<div className="border border-blue-100 bg-blue-50/30 p-4 rounded"><h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3><ul className="text-xs space-y-1"><li><b>Benefício:</b> {p.patologia}</li><li><b>Login GOV:</b> {p.govLogin}</li><li><b>Senha GOV:</b> {p.govSenha}</li><li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li></ul></div>)}
-                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded"><h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3><div className="text-sm"><p><span className="font-bold">Valor:</span> {p.valorContrato}</p><p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p><p><span className="font-bold">Status:</span> {p.statusPagamento}</p></div></div>
+                            {p.ramo === 'Previdenciário' && (<div className="border border-blue-100 bg-blue-50/30 p-5 rounded-lg"><h3 className="text-xs font-bold text-blue-800 uppercase mb-3 border-b border-blue-200 pb-2">Dados Previdenciários</h3><ul className="text-sm space-y-2 text-slate-700"><li><b>Benefício:</b> {p.patologia}</li><li><b>Login GOV:</b> <span className="font-mono">{p.govLogin}</span></li><li><b>Senha GOV:</b> <span className="font-mono">{p.govSenha}</span></li><li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li></ul></div>)}
+                            <div className="border border-orange-100 bg-orange-50/30 p-5 rounded-lg"><h3 className="text-xs font-bold text-orange-800 uppercase mb-3 border-b border-orange-200 pb-2">Informações Financeiras</h3><div className="text-sm space-y-2 text-slate-700"><p><b>Valor:</b> <span className="font-semibold text-lg">{p.valorContrato}</span></p><p><b>Forma:</b> {p.tipoPagamento}</p><p><b>Status:</b> <span className={`uppercase font-bold text-xs px-2 py-0.5 rounded ${p.statusPagamento==='Pago'?'bg-green-200 text-green-800':'bg-orange-200 text-orange-800'}`}>{p.statusPagamento}</span></p></div></div>
                         </div>
                     </div>
-                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400 shrink-0"><p>Documento para uso interno e acompanhamento processual.</p><p>NB Advocacia - Todos os direitos reservados.</p></div>
-                    <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2"><Icons.Check/> IMPRIMIR / SALVAR PDF</button></div>
+                    <div className="mt-12 pt-6 border-t border-slate-100 text-center text-xs text-slate-400 shrink-0 font-serif italic"><p>Documento confidencial gerado pelo sistema NB Advocacia.</p></div>
+                    <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy-900 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-navy-800 flex items-center gap-2 transition transform hover:-translate-y-1"><Icons.Check/> IMPRIMIR FICHA</button></div>
                 </div>
             </div>
         );
@@ -328,29 +332,45 @@
 
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
-                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="w-full"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3><div className="border-b border-blue-100 w-1/2 mx-auto"></div></div>
-                        <button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button>
+                <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto relative">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition"><Icons.X/></button>
+                    <div className="text-center mb-8">
+                        <div className="inline-block p-3 bg-blue-50 rounded-full text-blue-600 mb-3 shadow-sm"><Icons.Calculator/></div>
+                        <h3 className="text-2xl font-serif font-bold text-navy-900">Calculadora de Prazos</h3>
+                        <p className="text-slate-500 text-sm mt-1">Ferramenta auxiliar para contagem processual</p>
                     </div>
-                    <div className="space-y-3">
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option><option value="São Paulo">São Paulo</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (<option key={cidade} value={cidade}>{cidade}</option>))}</select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={tipoProcesso} onChange={e=>setTipoProcesso(e.target.value)}><option>Eletrônico</option><option>Físico</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option><option>TJPB</option></select>
+                    
+                    <div className="space-y-5">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Estado</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:border-blue-500 focus:bg-white outline-none transition" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option><option value="São Paulo">São Paulo</option></select></div>
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Comarca</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:border-blue-500 focus:bg-white outline-none transition" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (<option key={cidade} value={cidade}>{cidade}</option>))}</select></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Esfera</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:border-blue-500 focus:bg-white outline-none transition"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select></div>
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Formato</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm focus:border-blue-500 focus:bg-white outline-none transition" value={tipoProcesso} onChange={e=>setTipoProcesso(e.target.value)}><option>Eletrônico</option><option>Físico</option></select></div>
+                        </div>
+                        
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <label className="text-[10px] font-bold text-blue-600 uppercase mb-3 block text-center tracking-widest">Parâmetros do Prazo</label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Publicação</label><input type="date" className="w-full p-2 border border-slate-200 rounded text-center text-sm shadow-sm focus:border-blue-500 outline-none" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/></div>
+                                <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Dias</label><input type="number" className="w-full p-2 border border-slate-200 rounded text-center text-sm shadow-sm focus:border-blue-500 outline-none" placeholder="Ex: 15" value={dias} onChange={e=>setDias(e.target.value)}/></div>
+                            </div>
+                            <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-slate-200">
+                                <label className="flex items-center gap-2 cursor-pointer group"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-navy-900 w-4 h-4 cursor-pointer"/> <span className="text-slate-600 text-sm font-medium group-hover:text-navy-900 transition">Dias Úteis</span></label>
+                                <label className="flex items-center gap-2 cursor-pointer group"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-navy-900 w-4 h-4 cursor-pointer"/> <span className="text-slate-600 text-sm font-medium group-hover:text-navy-900 transition">Dias Corridos</span></label>
+                            </div>
+                        </div>
                     </div>
-                    <div className="mt-6 mb-2"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira a data da publicação</h3><div className="border-b border-blue-100 w-1/2 mx-auto mb-4"></div></div>
-                    <div className="space-y-4">
-                        <input type="date" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
-                        <input type="number" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" placeholder="Prazo em dias" value={dias} onChange={e=>setDias(e.target.value)}/>
-                    </div>
-                    <div className="flex justify-center gap-8 py-4">
-                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label>
-                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label>
-                    </div>
-                    <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow hover:bg-orange-700 transition duration-200">Calcular</button>
-                    {resultado && (<div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4"><p className="text-xs text-green-700 font-bold uppercase tracking-widest">Prazo Final</p><p className="text-3xl font-extrabold text-green-800 mt-1">{resultado}</p></div>)}
+                    
+                    <button onClick={calcular} className="w-full bg-gradient-to-r from-navy-900 to-navy-800 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition duration-300 mt-6 text-sm tracking-wide">CALCULAR PRAZO FINAL</button>
+                    
+                    {resultado && (
+                        <div className="bg-green-50 p-5 rounded-xl text-center border border-green-200 mt-6 shadow-sm fade-in">
+                            <p className="text-xs text-green-700 font-bold uppercase tracking-[0.2em] mb-1">Vencimento do Prazo</p>
+                            <p className="text-4xl font-serif font-bold text-green-800">{resultado}</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -378,19 +398,38 @@
             onLogin(user, "master");
             return;
         }
-        setError("Dados incorretos.");
+        setError("Credenciais inválidas. Tente novamente.");
       };
 
       return (
-        <div className="min-h-screen bg-navy flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in">
-            <div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
-            <form onSubmit={handle} className="space-y-4">
-              <input className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
-              <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
-              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              <button className="w-full bg-navy text-white py-3 rounded font-bold hover:bg-slate-800 transition">ENTRAR</button>
+        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[100px]"></div>
+             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-600/10 rounded-full blur-[100px]"></div>
+          </div>
+
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-10 fade-in relative z-10 border border-white/20">
+            <div className="text-center mb-8">
+                <div className="text-gold-500 flex justify-center mb-4"><div className="w-16 h-16 bg-navy-900 rounded-2xl flex items-center justify-center shadow-lg"><div className="w-10 h-10"><Icons.Scale /></div></div></div>
+                <h2 className="text-3xl font-serif font-bold text-navy-900 mb-1">NB ADVOCACIA</h2>
+                <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Sistema de Gestão Jurídica</p>
+            </div>
+            <form onSubmit={handle} className="space-y-5">
+              <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1">Identificação</label>
+                  <input className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-slate-50 transition-all font-medium text-slate-700" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
+              </div>
+              <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block pl-1">Senha de Acesso</label>
+                  <input type="password" className="w-full p-3.5 border border-slate-200 rounded-xl outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-slate-50 transition-all font-medium text-slate-700" placeholder="••••••••" value={pass} onChange={e => setPass(e.target.value)} />
+              </div>
+              {error && <div className="bg-red-50 text-red-600 text-xs p-3 rounded-lg text-center font-bold border border-red-100">{error}</div>}
+              <button className="w-full bg-navy-900 text-white py-4 rounded-xl font-bold hover:bg-navy-800 transition transform hover:-translate-y-0.5 shadow-lg shadow-navy-900/30 text-sm tracking-wide">ACESSAR SISTEMA</button>
             </form>
+            <div className="mt-8 text-center text-[10px] text-slate-400 font-medium">
+                &copy; 2026 NB Advocacia. Todos os direitos reservados.
+            </div>
           </div>
         </div>
       );
@@ -436,22 +475,13 @@
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
 
       const handleLogout = async () => {
-        try {
-          await registrarAuditoria(user, 'logout', role);
-        } catch(e) {}
+        try { await registrarAuditoria(user, 'logout', role); } catch(e) {}
         window.location.reload();
       };
 
       useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === 'Escape') {
-                setModal(false); setCalcModal(false);
-                setFichaModal(null); setModalSenha(false);
-                setAuditoriaModal(false);
-            }
-        };
-        window.addEventListener('keydown', handleEsc);
-        return () => window.removeEventListener('keydown', handleEsc);
+        const handleEsc = (e) => { if (e.key === 'Escape') { setModal(false); setCalcModal(false); setFichaModal(null); setModalSenha(false); setAuditoriaModal(false); } };
+        window.addEventListener('keydown', handleEsc); return () => window.removeEventListener('keydown', handleEsc);
       }, []);
 
       useEffect(() => {
@@ -506,132 +536,151 @@
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
       return (
-        <div className="min-h-screen pb-20 fade-in">
-          <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm flex justify-between items-center no-print flex-wrap gap-4">
-             <div className="flex items-center gap-3">
-                 <div className="text-yellow-600"><Icons.Scale /></div>
-                 <div><h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1><span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role === 'master' ? 'Painel Mestre' : `Dr(a). ${user}`}</span></div>
+        <div className="min-h-screen pb-24 fade-in bg-[#f8fafc]">
+          {/* HEADER PREMIUM */}
+          <header className="glass-header sticky top-0 z-40 px-8 py-4 flex justify-between items-center transition-all">
+             <div className="flex items-center gap-4">
+                 <div className="text-gold-500 bg-navy-900 p-2 rounded-lg shadow-lg"><div className="w-6 h-6"><Icons.Scale /></div></div>
+                 <div>
+                    <h1 className="text-2xl font-serif font-bold text-navy-900 tracking-tight leading-none">NB ADVOCACIA</h1>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-gold-600 uppercase tracking-[0.2em]">Gestão Jurídica</span>
+                        <span className="text-[10px] text-slate-300">•</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{role === 'master' ? 'Acesso Mestre' : `Dr(a). ${user}`}</span>
+                    </div>
+                 </div>
              </div>
-             <div className="flex gap-2 items-center flex-wrap">
-                 <button onClick={()=>setAba('dashboard')} className={`hidden md:flex px-3 py-2 rounded text-sm font-bold items-center gap-2 border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
-                 <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='processos'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>Processos</button>
-                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Calculator/> Calc</button>
+             
+             <div className="flex gap-3 items-center">
+                 <nav className="hidden md:flex bg-slate-100 p-1 rounded-xl mr-2">
+                    <button onClick={()=>setAba('dashboard')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='dashboard'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><Icons.Chart/> Dashboard</button>
+                    <button onClick={()=>setAba('processos')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='processos'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Processos</button>
+                    {(role === 'master' || role === 'admin') && <button onClick={()=>setAba('equipe')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='equipe'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Equipe</button>}
+                 </nav>
+
+                 <div className="h-8 w-px bg-slate-200 mx-1"></div>
+
+                 <button onClick={()=>setCalcModal(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Calculadora"><div className="w-5 h-5"><Icons.Calculator/></div></button>
                  
                  {(role === 'master' || role === 'admin') && (
-                   <button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>
-                 )}
-
-                 {(role === 'master' || role === 'admin') && (
-                   <button onClick={() => setAuditoriaModal(true)} className="px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition relative">
-                     <Icons.Audit /> Auditoria <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white pulse-green"></span>
+                   <button onClick={() => setAuditoriaModal(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-purple-50 hover:text-purple-700 transition border border-transparent hover:border-purple-100 relative group" title="Auditoria">
+                     <div className="w-5 h-5"><Icons.Audit /></div>
+                     <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-green-500 border-2 border-white pulse-green"></span>
                    </button>
                  )}
                  
-                 <button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200" title="Alterar Senha"><Icons.Key/></button>
+                 <button onClick={()=>setModalSenha(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Alterar Senha"><div className="w-5 h-5"><Icons.Key/></div></button>
                  
                  {(role !== 'viewer') && (
-                   <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors whitespace-nowrap shrink-0"><Icons.Plus/> NOVO</button>
+                   <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-gradient-to-r from-gold-500 to-gold-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:shadow-lg hover:shadow-gold-500/30 hover:-translate-y-0.5 transition flex items-center gap-2 ml-2"><Icons.Plus/> NOVO PROCESSO</button>
                  )}
                  
-                 <button onClick={handleLogout} className="p-2 text-red-400 hover:text-red-600 border border-red-100 rounded bg-red-50 hover:bg-red-100 transition" title="Sair do Sistema"><Icons.LogOut/></button>
+                 <button onClick={handleLogout} className="ml-2 p-2.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition border border-transparent hover:border-red-100" title="Sair"><div className="w-5 h-5"><Icons.LogOut/></div></button>
              </div>
           </header>
 
-          <main className="max-w-7xl mx-auto px-6 py-8">
+          <main className="max-w-7xl mx-auto px-8 py-10">
              {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
              {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
              {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
 
              {/* DASHBOARD */}
              {aba === 'dashboard' && (
-                 <div className="space-y-6 fade-in">
+                 <div className="space-y-8 fade-in">
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3 className="text-xs font-bold text-slate-500 uppercase">Total</h3><p className="text-3xl font-bold text-slate-800">{stats.total}</p></div>
-                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Em Andamento</h3><p className="text-3xl font-bold text-blue-600">{stats.ativos}</p></div>
-                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Conclusos</h3><p className="text-3xl font-bold text-green-600">{stats.conclusos}</p></div>
+                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover-card relative overflow-hidden group">
+                             <div className="absolute right-0 top-0 w-24 h-24 bg-navy-900/5 rounded-bl-full transition group-hover:scale-110"></div>
+                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total de Casos</h3>
+                             <p className="text-4xl font-serif font-bold text-navy-900">{stats.total}</p>
+                             <div className="mt-4 text-xs font-medium text-slate-400 flex items-center gap-1"><span className="text-green-500 font-bold">100%</span> da base ativa</div>
+                         </div>
+                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover-card relative overflow-hidden group">
+                             <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 rounded-bl-full transition group-hover:scale-110"></div>
+                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Em Andamento</h3>
+                             <p className="text-4xl font-serif font-bold text-blue-600">{stats.ativos}</p>
+                             <div className="mt-4 text-xs font-medium text-slate-400">Aguardando providências</div>
+                         </div>
+                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover-card relative overflow-hidden group">
+                             <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full transition group-hover:scale-110"></div>
+                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Concluídos</h3>
+                             <p className="text-4xl font-serif font-bold text-emerald-600">{stats.conclusos}</p>
+                             <div className="mt-4 text-xs font-medium text-slate-400">Casos arquivados com sucesso</div>
+                         </div>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Áreas de Atuação</h4><div className="h-60 flex justify-center"><ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} /></div></div>
-                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Volume</h4><div className="h-60"><ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }} /></div></div>
+                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover-card h-96">
+                             <h4 className="font-bold text-navy-900 mb-6 flex items-center gap-2"><Icons.Chart/> Distribuição por Área</h4>
+                             <div className="h-64 flex justify-center"><ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#d97706', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0, hoverOffset: 10 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 11 } } } }, cutout: '70%' }} /></div>
+                         </div>
+                         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover-card h-96">
+                             <h4 className="font-bold text-navy-900 mb-6 flex items-center gap-2"><Icons.Chart/> Volume Processual</h4>
+                             <div className="h-64"><ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'], borderRadius: 6 }] }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }} /></div>
+                         </div>
                      </div>
                  </div>
              )}
 
-             {/* EQUIPE (MASTER & ADMIN) */}
+             {/* EQUIPE */}
              {aba === 'equipe' && (role === 'master' || role === 'admin') && (
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-                    {/* GESTÃO DE ACESSOS (LOGIN) */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
+                    <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-100">
+                        <h3 className="font-serif font-bold text-xl text-navy-900 mb-6 flex gap-3 items-center"><div className="p-2 bg-navy-50 rounded-lg text-navy-900"><div className="w-5 h-5"><Icons.Key/></div></div> Gestão de Acessos</h3>
                         
-                        {/* FORMULÁRIO DE EDIÇÃO - APENAS MASTER */}
                         {role === 'master' && (
-                            <div className="bg-slate-50 p-4 rounded border mb-4 space-y-2">
-                                <input 
-                                    className={`w-full p-2 border rounded ${editingUser ? 'bg-slate-200' : ''}`} 
-                                    placeholder="Nome (Login)" 
-                                    disabled={!!editingUser}
-                                    value={novoUsuario.nome} 
-                                    onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}
-                                />
-                                <div className="flex gap-2">
-                                    <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
-                                    <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
-                                        <option value="viewer">Visualizador</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="master">Master</option>
-                                    </select>
-                                    <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">{editingUser ? 'Atualizar' : 'Salvar'}</button>
-                                    {editingUser && <button onClick={()=>{setEditingUser(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="bg-slate-400 text-white px-3 rounded">X</button>}
+                            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 space-y-4">
+                                <input className={`w-full p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition ${editingUser ? 'bg-slate-100 text-slate-500' : ''}`} placeholder="Nome de Usuário (Login)" disabled={!!editingUser} value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
+                                <div className="flex gap-3">
+                                    <input className="flex-1 p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
+                                    <select className="p-3 border rounded-lg bg-white text-sm font-medium text-slate-700 focus:ring-2 focus:ring-navy-900/10 outline-none transition" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option><option value="master">Master</option></select>
+                                    <button onClick={salvarUsuario} className="bg-navy-900 text-white px-6 rounded-lg font-bold text-sm hover:bg-navy-800 transition shadow-lg shadow-navy-900/20">{editingUser ? 'Atualizar' : 'Criar'}</button>
+                                    {editingUser && <button onClick={()=>{setEditingUser(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="bg-white text-slate-400 border border-slate-200 px-3 rounded-lg hover:bg-slate-50 hover:text-red-500 transition"><Icons.X/></button>}
                                 </div>
                             </div>
                         )}
 
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-100 border-b">
-                                <tr>
-                                    <th className="p-2">Usuário</th>
-                                    <th className="p-2">Senha</th>
-                                    <th className="p-2">Role</th>
-                                    {role === 'master' && <th className="p-2 text-right">Ações</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {listaUsuarios.map(u => (
-                                    <tr key={u.id} className="border-b hover:bg-slate-50">
-                                        <td className="p-2 font-bold">{u.id}</td>
-                                        <td className="p-2 font-mono text-slate-500">{u.senha}</td>
-                                        <td className="p-2 uppercase text-[10px] font-bold text-navy">{u.role}</td>
-                                        {role === 'master' && (
-                                            <td className="p-2 text-right flex justify-end gap-2">
-                                                <button onClick={()=>prepararEdicaoUsuario(u)} className="text-blue-500"><Icons.Edit/></button>
-                                                <button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="overflow-hidden rounded-xl border border-slate-100">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100"><tr><th className="p-4">Usuário</th><th className="p-4">Senha</th><th className="p-4">Perfil</th>{role === 'master' && <th className="p-4 text-right">Ações</th>}</tr></thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {listaUsuarios.map(u => (
+                                        <tr key={u.id} className="group hover:bg-slate-50/80 transition">
+                                            <td className="p-4 font-bold text-navy-900 flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">{u.id.charAt(0).toUpperCase()}</div>{u.id}</td>
+                                            <td className="p-4 font-mono text-slate-500 text-xs bg-slate-50/50 rounded">{u.senha}</td>
+                                            <td className="p-4"><span className={`uppercase text-[10px] font-bold px-2 py-1 rounded border ${u.role==='master'?'bg-purple-50 text-purple-700 border-purple-100':u.role==='admin'?'bg-blue-50 text-blue-700 border-blue-100':'bg-slate-50 text-slate-500 border-slate-100'}`}>{u.role}</span></td>
+                                            {role === 'master' && (
+                                                <td className="p-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div className="flex justify-end gap-2">
+                                                        <button onClick={()=>prepararEdicaoUsuario(u)} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded"><div className="w-4 h-4"><Icons.Edit/></div></button>
+                                                        <button onClick={()=>excluirUsuario(u.id)} className="p-1.5 text-red-400 hover:bg-red-50 rounded"><div className="w-4 h-4"><Icons.Trash/></div></button>
+                                                    </div>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    {/* CORPO JURÍDICO (DROPDOWN LIST) */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico (Dropdown)</h3>
+                    <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-100">
+                        <h3 className="font-serif font-bold text-xl text-navy-900 mb-6 flex gap-3 items-center"><div className="p-2 bg-navy-50 rounded-lg text-navy-900"><div className="w-5 h-5"><Icons.Users/></div></div> Corpo Jurídico</h3>
                         
-                        {/* ADICIONAR MEMBRO - APENAS MASTER */}
                         {role === 'master' && (
-                            <div className="flex gap-2 mb-4">
-                                <input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
-                                <button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button>
+                            <div className="flex gap-3 mb-6">
+                                <input className="flex-1 p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition" placeholder="Nome Completo do Advogado" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
+                                <button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-6 rounded-lg font-bold text-sm hover:bg-green-700 transition shadow-lg shadow-green-600/20">Adicionar</button>
                             </div>
                         )}
 
-                        <ul className="divide-y border rounded">
+                        <ul className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
                             {listaEquipe.map((nome, i) => (
-                                <li key={i} className="p-3 flex justify-between items-center bg-slate-50">
-                                    <span className="font-bold text-slate-700">{nome}</span>
+                                <li key={i} className="p-4 flex justify-between items-center hover:bg-slate-50 transition group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-navy-800 to-navy-900 flex items-center justify-center text-white text-xs font-bold">{nome.charAt(0)}</div>
+                                        <span className="font-medium text-slate-700">{nome}</span>
+                                    </div>
                                     {role === 'master' && (
-                                        <button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button>
+                                        <button onClick={()=>removerMembroEquipe(nome)} className="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><div className="w-4 h-4"><Icons.Trash/></div></button>
                                     )}
                                 </li>
                             ))}
@@ -642,32 +691,80 @@
 
              {/* PROCESSOS */}
              {aba === 'processos' && (
-                 <div className="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
-                     <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
-                         <div className="relative flex-1 w-full"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search/></span><input type="text" placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full outline-none focus:border-navy" value={busca} onChange={e => setBusca(e.target.value)} /></div>
-                         <div className="flex items-center gap-2 w-full md:w-auto"><div className="relative w-full md:w-60"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Filter/></span><select className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full bg-white font-bold text-slate-600 outline-none focus:border-navy" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}><option value="Todos">Todos os Responsáveis</option>{listaEquipe.map(nome => <option key={nome} value={nome}>Apenas {nome.split(' ')[0]}</option>)}</select></div><button onClick={exportar} className="flex items-center gap-1 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded hover:bg-green-100"><Icons.Excel/> Excel</button></div>
+                 <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden fade-in min-h-[500px]">
+                     <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-white">
+                         <div className="relative flex-1 w-full group">
+                             <span className="absolute left-3 top-3 text-slate-400 group-focus-within:text-navy-900 transition"><Icons.Search/></span>
+                             <input type="text" placeholder="Buscar por cliente, CPF ou nº do processo..." className="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm w-full outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 bg-slate-50 focus:bg-white transition-all" value={busca} onChange={e => setBusca(e.target.value)} />
+                         </div>
+                         <div className="flex items-center gap-3 w-full md:w-auto">
+                            <div className="relative w-full md:w-64">
+                                <span className="absolute left-3 top-3 text-slate-400"><Icons.Filter/></span>
+                                <select className="pl-10 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm w-full bg-white font-medium text-slate-600 outline-none focus:border-navy-900 cursor-pointer appearance-none hover:bg-slate-50 transition" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}><option value="Todos">Todos os Responsáveis</option>{listaEquipe.map(nome => <option key={nome} value={nome}>Adv. {nome.split(' ')[0]}</option>)}</select>
+                            </div>
+                            <button onClick={exportar} className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2.5 rounded-xl hover:bg-green-100 transition"><div className="w-4 h-4"><Icons.Excel/></div> Excel</button>
+                         </div>
                      </div>
                      <div className="overflow-x-auto">
                          <table className="w-full text-sm text-left whitespace-nowrap">
-                             <thead className="bg-slate-100 text-slate-500 font-bold border-b"><tr><th className="px-4 py-3">Status</th><th className="px-4 py-3">Cliente / Local</th><th className="px-4 py-3">Processo/Ramo</th><th className="px-4 py-3">Resp.</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Financeiro</th><th className="px-4 py-3 text-center">Ações</th></tr></thead>
-                             <tbody className="divide-y">
+                             <thead className="bg-slate-50/50 text-slate-500 font-semibold border-b border-slate-100 text-xs uppercase tracking-wider">
+                                 <tr><th className="px-6 py-4">Status</th><th className="px-6 py-4">Cliente / Local</th><th className="px-6 py-4">Processo / Ramo</th><th className="px-6 py-4">Responsável</th><th className="px-6 py-4">Prazo</th><th className="px-6 py-4">Financeiro</th><th className="px-6 py-4 text-center">Ações</th></tr>
+                             </thead>
+                             <tbody className="divide-y divide-slate-50">
                                  {processosFiltrados.map(p => (
-                                     <tr key={p.id} className="hover:bg-slate-50">
-                                         <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${p.statusProcessual==='Concluso'?'bg-green-100 text-green-700':'bg-blue-50 text-blue-700'}`}>{p.statusProcessual}</span></td>
-                                         <td className="px-4 py-3"><div className="font-bold text-slate-700 flex items-center gap-2">{p.cliente} {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500"><Icons.WhatsApp/></button>}</div><div className="text-xs text-slate-400">{p.cidade} - {p.estado}</div></td>
-                                         <td className="px-4 py-3"><div className="text-slate-700 font-mono text-xs">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div><div className="text-xs text-slate-400">{p.ramo}</div></td>
-                                         <td className="px-4 py-3 text-slate-600 font-medium">{p.advogado}</td>
-                                         <td className="px-4 py-3 text-red-600 font-bold">{p.prazo ? new Date(p.prazo).toLocaleDateString() : '-'}</td>
-                                         <td className="px-4 py-3"><div className="text-xs">{p.valorContrato || '0,00'}</div><span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span></td>
-                                         <td className="px-4 py-3 text-center flex justify-center gap-2">
-                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy" title="Ficha"><Icons.FileText/></button>
-                                             <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-400 hover:text-navy" title="Editar"><Icons.Edit/></button>
-                                             {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-slate-300 hover:text-red-500" title="Excluir"><Icons.Trash/></button>}
+                                     <tr key={p.id} className="hover:bg-blue-50/30 transition duration-150 group">
+                                         <td className="px-6 py-4">
+                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                                                 p.statusProcessual==='Concluso' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                 p.statusProcessual==='Arquivado' ? 'bg-slate-100 text-slate-500 border-slate-200' :
+                                                 'bg-blue-50 text-blue-700 border-blue-100'
+                                             }`}>
+                                                 {p.statusProcessual}
+                                             </span>
+                                         </td>
+                                         <td className="px-6 py-4">
+                                             <div className="font-bold text-navy-900 text-base flex items-center gap-2 mb-0.5">
+                                                 {p.cliente} 
+                                                 {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500 hover:scale-110 transition bg-green-50 rounded-full p-1"><div className="w-3 h-3"><Icons.WhatsApp/></div></button>}
+                                             </div>
+                                             <div className="text-xs text-slate-400 font-medium flex items-center gap-1"><div className="w-3 h-3"><Icons.Briefcase/></div> {p.cidade} - {p.estado}</div>
+                                         </td>
+                                         <td className="px-6 py-4">
+                                             <div className="text-slate-700 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div>
+                                             <div className="text-xs text-gold-600 font-bold uppercase tracking-wide">{p.ramo}</div>
+                                         </td>
+                                         <td className="px-6 py-4">
+                                             <div className="flex items-center gap-2">
+                                                 <div className="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-500">{p.advogado.charAt(0)}</div>
+                                                 <span className="text-slate-600 font-medium text-xs">{p.advogado.split(' ')[0]}...</span>
+                                             </div>
+                                         </td>
+                                         <td className="px-6 py-4">
+                                             <div className={`text-xs font-bold px-2 py-1 rounded inline-flex items-center gap-1 ${p.prazo ? 'bg-red-50 text-red-600 border border-red-100' : 'text-slate-400'}`}>
+                                                 <div className="w-3 h-3"><Icons.Clock/></div> {p.prazo ? new Date(p.prazo).toLocaleDateString() : '-'}
+                                             </div>
+                                         </td>
+                                         <td className="px-6 py-4">
+                                             <div className="text-sm font-semibold text-slate-700">{p.valorContrato || '0,00'}</div>
+                                             <span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span>
+                                         </td>
+                                         <td className="px-6 py-4 text-center">
+                                             <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                 <button onClick={()=>setFichaModal(p)} className="p-2 text-slate-500 hover:text-navy-900 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-sm transition" title="Ver Ficha"><div className="w-4 h-4"><Icons.FileText/></div></button>
+                                                 <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-white rounded-lg border border-transparent hover:border-blue-100 shadow-sm transition" title="Editar"><div className="w-4 h-4"><Icons.Edit/></div></button>
+                                                 {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-white rounded-lg border border-transparent hover:border-red-100 shadow-sm transition" title="Excluir"><div className="w-4 h-4"><Icons.Trash/></div></button>}
+                                             </div>
                                          </td>
                                      </tr>
                                  ))}
                              </tbody>
                          </table>
+                         {processosFiltrados.length === 0 && (
+                             <div className="p-12 text-center text-slate-400">
+                                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><Icons.Search/></div>
+                                 <p className="font-medium">Nenhum processo encontrado.</p>
+                             </div>
+                         )}
                      </div>
                  </div>
              )}
@@ -675,13 +772,18 @@
 
           {/* MODAL SENHA */}
           {modalSenha && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
-                <h3 className="font-bold text-lg text-slate-800 mb-4 flex gap-2 items-center"><Icons.Key/> Alterar Minha Senha</h3>
-                <input type="password" placeholder="Nova Senha" className="w-full p-2 border rounded mb-4" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
-                <div className="flex gap-2">
-                  <button onClick={()=>setModalSenha(false)} className="flex-1 py-2 border rounded hover:bg-slate-50">Cancelar</button>
-                  <button onClick={alterarSenha} className="flex-1 py-2 bg-navy text-white rounded font-bold hover:bg-slate-800">Salvar</button>
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-navy-900/40 backdrop-blur-sm p-4 fade-in">
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 relative">
+                <button onClick={()=>setModalSenha(false)} className="absolute top-4 right-4 text-slate-300 hover:text-navy-900"><Icons.X/></button>
+                <div className="text-center mb-6">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-3"><Icons.Key/></div>
+                    <h3 className="font-serif font-bold text-xl text-navy-900">Segurança</h3>
+                    <p className="text-xs text-slate-500">Atualize sua credencial de acesso</p>
+                </div>
+                <input type="password" placeholder="Nova Senha" className="w-full p-3 border border-slate-200 rounded-xl text-sm mb-4 outline-none focus:border-navy-900 focus:ring-1 focus:ring-navy-900 transition text-center font-medium" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
+                <div className="flex gap-3">
+                  <button onClick={()=>setModalSenha(false)} className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-slate-500 hover:bg-slate-50 text-xs">CANCELAR</button>
+                  <button onClick={alterarSenha} className="flex-1 py-3 bg-navy-900 text-white rounded-xl font-bold hover:bg-navy-800 shadow-lg shadow-navy-900/20 text-xs">ATUALIZAR SENHA</button>
                 </div>
               </div>
             </div>
@@ -689,36 +791,123 @@
 
           {/* MODAL NOVO/EDITAR PROCESSO */}
           {modal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
-                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="bg-navy px-6 py-4 flex justify-between items-center shrink-0"><div className="flex items-center gap-2 text-yellow-500"><Icons.Scale /><h3 className="text-lg font-bold text-white tracking-wide">{editingId ? 'EDITAR' : 'NOVO CADASTRO'}</h3></div><button onClick={()=>setModal(false)} className="text-slate-400 hover:text-white"><Icons.X /></button></div>
-                    <div className="p-6 overflow-y-auto custom-scrollbar space-y-5">
-                        <div className="space-y-3">
-                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cliente</label><input className="w-full p-2 border rounded bg-slate-50 font-bold text-slate-700 outline-none focus:border-yellow-600" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/></div>
-                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">CPF</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Telefone</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div></div>
-                            <div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">UF</label><select className="w-full p-2 border rounded bg-white" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cidade</label><input className="w-full p-2 border rounded" placeholder="Nome da cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div></div>
-                            <div className="grid grid-cols-3 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Rua</label><input className="w-full p-2 border rounded" value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Nº</label><input className="w-full p-2 border rounded" value={formData.numero} onChange={e=>setFormData({...formData, numero: e.target.value})}/></div><div className="col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Bairro</label><input className="w-full p-2 border rounded" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div></div>
-                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><textarea className="w-full p-2 border rounded text-sm h-20 resize-none outline-none focus:border-yellow-600" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-white border-b border-slate-100 px-8 py-5 flex justify-between items-center shrink-0">
+                        <div className="flex items-center gap-3 text-navy-900">
+                            <div className="bg-gold-100 text-gold-600 p-2 rounded-lg"><Icons.Scale /></div>
+                            <div>
+                                <h3 className="text-lg font-serif font-bold tracking-wide">{editingId ? 'Editar Processo' : 'Novo Processo'}</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ficha Cadastral</p>
+                            </div>
                         </div>
-                        <hr className="border-slate-100"/>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-4 mb-2"><label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Ramo:</label><select className="p-1 border rounded text-sm font-bold text-navy" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select></div>
-                            {formData.ramo !== 'Previdenciário' && (
-                                <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-3">
-                                    <h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
+                        <button onClick={()=>setModal(false)} className="text-slate-400 hover:text-red-500 transition bg-slate-50 hover:bg-red-50 p-2 rounded-lg"><Icons.X /></button>
+                    </div>
+                    
+                    <div className="p-8 overflow-y-auto custom-scrollbar space-y-8 bg-[#fdfdfd]">
+                        {/* SEÇÃO 1: CLIENTE */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">Dados do Cliente</h4>
+                            <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Nome Completo</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white font-medium text-slate-700 outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition shadow-sm" placeholder="Ex: João da Silva" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">CPF</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm font-mono text-sm" placeholder="000.000.000-00" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div>
+                                <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Telefone</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm font-mono text-sm" placeholder="(00) 00000-0000" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div>
+                            </div>
+                            <div className="grid grid-cols-12 gap-4">
+                                <div className="col-span-4"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Estado (UF)</label><select className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm appearance-none" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div>
+                                <div className="col-span-8"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Cidade</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Recife, João Pessoa..." value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="col-span-2"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Endereço</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Rua, Avenida..." value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div>
+                                <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Número</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" value={formData.numero} onChange={e=>setFormData({...formData, numero: e.target.value})}/></div>
+                                <div className="col-span-3"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Bairro</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div>
+                            </div>
+                            <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Resumo do Caso</label><textarea className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 text-sm h-24 resize-none outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition shadow-sm" placeholder="Descreva brevemente a demanda..." value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
+                        </div>
+
+                        {/* SEÇÃO 2: JURÍDICO */}
+                        <div className="space-y-4">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4 mt-2">Dados Processuais</h4>
+                            <div className="bg-navy-50/50 p-5 rounded-xl border border-navy-100">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <label className="text-xs font-bold text-navy-900 uppercase tracking-wider block">Área de Atuação:</label>
+                                    <select className="px-3 py-1.5 border border-navy-200 rounded-lg text-sm font-bold text-navy-900 bg-white outline-none focus:border-gold-500" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
+                                </div>
+                                {formData.ramo !== 'Previdenciário' && (
+                                    <div className="mb-4">
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte Contrária</label><input className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm" placeholder="Nome da Parte / Empresa" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tipo</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm outline-none" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
+                                        </div>
+                                    </div>
+                                )}
+                                {formData.ramo === 'Previdenciário' ? (
+                                    <div className="bg-white p-4 rounded-xl border border-blue-100 space-y-3 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-xs font-bold text-blue-700 uppercase">Detalhes INSS</span></div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Patologia / Benefício</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Login GOV</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm font-mono focus:bg-white transition" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Senha GOV</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm font-mono focus:bg-white transition" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Data Perícia</label><input type="datetime-local" className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="col-span-2 bg-white p-3 rounded-lg border border-slate-200 flex items-center gap-3">
+                                            <input type="checkbox" className="w-4 h-4 accent-navy-900" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-sm text-slate-600 font-medium">Ainda não possui nº de processo (Pré-processual)</span>
+                                        </div>
+                                        {!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Nº Processo</label><input className="w-full p-3 border border-slate-200 rounded-lg bg-white font-mono text-sm focus:border-navy-900 outline-none" placeholder="0000000-00.0000.0.00.0000" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <div><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Advogado Responsável</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm outline-none" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div>
+                                    <div><label className="text-[10px] font-bold text-red-500 uppercase mb-1 block">Prazo Fatal</label><input type="date" className="w-full p-2.5 border border-red-100 rounded-lg bg-red-50/50 text-sm text-red-700 font-medium outline-none focus:border-red-300" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div>
+                                    <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Status Processual</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm font-medium text-navy-900 outline-none" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SEÇÃO 3: ANEXOS & FINANCEIRO */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 h-full">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><Icons.Briefcase/> Links / Anexos</h4>
+                                <div className="space-y-3">
+                                    <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-2"><input type="checkbox" className="accent-green-600 w-4 h-4" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-navy-900">Procuração</span></div>
+                                        <input className="w-full p-1.5 border-b border-slate-200 text-xs bg-transparent text-blue-600 placeholder-slate-400 outline-none" placeholder="Cole o link do drive..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-2"><input type="checkbox" className="accent-green-600 w-4 h-4" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-navy-900">Contrato</span></div>
+                                        <input className="w-full p-1.5 border-b border-slate-200 text-xs bg-transparent text-blue-600 placeholder-slate-400 outline-none" placeholder="Cole o link do drive..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/>
                                     </div>
                                 </div>
-                            )}
-                            {formData.ramo === 'Previdenciário' ? (<div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div></div></div>) : (<div className="grid grid-cols-2 gap-3"><div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span></div>{!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}</div>)}
-                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div><div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div></div>
+                            </div>
+                            
+                            <div className="bg-gold-50/50 p-5 rounded-xl border border-gold-100 h-full">
+                                <h4 className="text-xs font-bold text-gold-700 uppercase mb-3 flex items-center gap-2"><Icons.Chart/> Honorários</h4>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div><label className="text-[10px] font-bold text-slate-400 block mb-1">Tipo</label><select className="w-full p-2 border border-gold-200 rounded bg-white text-sm outline-none" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div>
+                                        <div><label className="text-[10px] font-bold text-slate-400 block mb-1">Status</label><select className="w-full p-2 border border-gold-200 rounded bg-white text-sm outline-none font-bold text-slate-700" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div>
+                                    </div>
+                                    {formData.tipoPagamento === 'Parcelado' ? (
+                                        <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded border border-gold-100">
+                                            <div><label className="text-[10px] font-bold text-slate-400 block">Qtd Parc.</label><input type="number" className="w-full p-1 border-b border-slate-200 text-sm font-bold text-navy-900 outline-none" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div>
+                                            <div><label className="text-[10px] font-bold text-slate-400 block">Valor Parc.</label><input className="w-full p-1 border-b border-slate-200 text-sm font-bold text-navy-900 outline-none" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div>
+                                        </div>
+                                    ) : (
+                                        <div><label className="text-[10px] font-bold text-slate-400 block mb-1">Valor Total</label><input className="w-full p-3 border border-gold-200 rounded bg-white text-lg font-bold text-emerald-600 outline-none placeholder-emerald-200" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200"><div className="flex items-center gap-2 mb-2"><span className="text-xs font-bold text-slate-600 uppercase">Anexos (Links Nuvem)</span></div><div className="space-y-2"><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Procuração</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/></div><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Contrato</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/></div></div></div>
-                        <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100"><h4 className="text-xs font-bold text-orange-800 uppercase mb-2">Honorários</h4><div className="grid grid-cols-2 gap-3 mb-2"><div><label className="text-[10px] font-bold text-slate-400">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div><div><label className="text-[10px] font-bold text-slate-400">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div></div>{formData.tipoPagamento === 'Parcelado' ? (<div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400">Qtd</label><input type="number" className="w-full p-2 border rounded text-sm" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400">Valor Parc.</label><input className="w-full p-2 border rounded text-sm" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div></div>) : (<div><label className="text-[10px] font-bold text-slate-400">Valor Total</label><input className="w-full p-2 border rounded text-sm font-bold" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>)}</div>
                     </div>
-                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 rounded-lg border text-slate-500 font-bold hover:bg-slate-100 transition">CANCELAR</button><button onClick={salvar} className="flex-[2] py-3 rounded-lg bg-navy text-white font-bold hover:bg-slate-800 shadow transition flex items-center justify-center gap-2"><Icons.Check/> SALVAR</button></div>
+                    
+                    <div className="bg-white p-5 border-t border-slate-100 flex gap-4 shrink-0">
+                        <button onClick={()=>setModal(false)} className="flex-1 py-3.5 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition text-sm">CANCELAR</button>
+                        <button onClick={salvar} className="flex-[2] py-3.5 rounded-xl bg-gradient-to-r from-navy-900 to-navy-800 text-white font-bold hover:shadow-lg hover:shadow-navy-900/20 transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2"><Icons.Check/> SALVAR PROCESSO</button>
+                    </div>
                 </div>
             </div>
           )}
