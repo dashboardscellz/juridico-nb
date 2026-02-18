@@ -3,30 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v28.0</title>
+  <title>NB Advocacia - Gestão Jurídica v17.0</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
   <style>
-    body { font-family: system-ui, sans-serif; background-color: #f8fafc; }
-    .bg-navy { background-color: #0f172a; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
     .fade-in { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    @media print { .no-print { display: none !important; } #print-area { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .bg-navy { background-color: #0f172a; }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Animação do ponto verde (online) */
+    @keyframes pulse-green {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.4); }
+    }
+    .pulse-green { animation: pulse-green 1.5s infinite; }
+
+    /* Linha de auditoria */
+    @keyframes slideInRow {
+      from { opacity: 0; transform: translateX(-12px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    .audit-row-new { animation: slideInRow 0.4s ease-out; }
+
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { 
+        position: absolute; left: 0; top: 0; width: 100%; height: auto !important; 
+        max-height: none !important; overflow: visible !important; padding: 20px; 
+        background: white; box-shadow: none;
+      }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
 
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- CONFIGURAÇÃO FIREBASE ---
     const firebaseConfig = {
       apiKey: "AIzaSyCC1jE63rpMAu_5rfCe5IVhB_ysYCo1bd0",
       authDomain: "ab-advocacia.firebaseapp.com",
@@ -37,207 +70,749 @@
       measurementId: "G-9380LF0TYF"
     };
 
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) { try { firebase.initializeApp(firebaseConfig); } catch (e) { console.error("Erro Firebase:", e); } }
     const db = firebase.firestore();
     const auth = firebase.auth();
+    
+    const COL_PROCESSOS    = 'gestao_processos_nb';
+    const COL_USUARIOS     = 'credenciais_advocacia';
+    const COL_PROFISSIONAIS= 'equipe_nomes_nb'; 
+    const COL_AUDITORIA    = 'auditoria_acessos_nb';   // ← NOVA COLEÇÃO
 
-    const SvgIcon = ({ name, className = "w-4 h-4" }) => {
-      const icons = {
-        x: <path d="M18 6L6 18M6 6l12 12" />,
-        plus: <path d="M12 5v14M5 12h14" />,
-        calc: <path d="M4 2v20h16V2H4zm4 4h8v2H8V6zm0 4h8v2H8v-2zm0 4h3v2H8v-2zm5 0h3v2h-3v-2zm-5 4h3v2H8v-2zm5 0h3v2h-3v-2z" />,
-        edit: <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" />,
-        trash: <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />,
-        key: <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3m-3-3l2.5-2.5" />,
-        audit: <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-      };
-      return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icons[name]}</svg>;
+    // --- DADOS DE CIDADES ---
+    const DADOS_ESTADOS = {
+        "Pernambuco": [
+            "Recife","Jaboatão dos Guararapes","Olinda","Caruaru","Petrolina","Paulista","Cabo de Santo Agostinho","Camaragibe","Garanhuns","Vitória de Santo Antão","Igarassu","São Lourenço da Mata","Abreu e Lima","Santa Cruz do Capibaribe","Ipojuca","Serra Talhada","Araripina","Gravatá","Carpina","Goiana","Belo Jardim","Arcoverde","Ouricuri","Escada","Pesqueira","Surubim","Palmares","Moreno","Bezerros","Salgueiro","São Bento do Una","Buíque","Paudalho","Limoeiro","Timbaúba","Brejo da Madre de Deus","Bom Conselho","Ribeirão","Sirinhaém","Águas Belas","Lajedo","Bonito","Toritama","Catende","Barreiros","Santa Maria da Boa Vista","Bom Jardim","São José do Belmonte","Bodocó","Afogados da Ingazeira"
+        ],
+        "Paraíba": [
+            "João Pessoa","Campina Grande","Santa Rita","Patos","Bayeux","Sousa","Cajazeiras","Cabedelo","Guarabira","Sapé","Queimadas","Mamanguape","Pombal","Monteiro","São Bento","Esperança","Catolé do Rocha","Pedras de Fogo","Lagoa Seca","Conde"
+        ]
     };
 
-    const App = () => {
+    const LISTA_ESTADOS = ["PE", "PB"];
+    const LISTA_RAMOS = ["Cível","Previdenciário","Trabalhista","Penal","Família e Sucessões","Consumidor","Administrativo","Tributário","Empresarial","Eleitoral","Ambiental","Digital","Imobiliário","Militar","Agrário","Outros"];
+    const LISTA_EQUIPE_PADRAO = ["Evison Nascimento","Adiellyson Bomfim","Manassés Oliveira (Estagiário)","Bárbara Brenda (Estagiária)"];
+
+    // --- ÍCONES ---
+    const Icons = {
+      Scale: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>,
+      WhatsApp: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.867-2.031-.967-.272-.099-.47-.149-.669.198-.199.347-.768.967-.941 1.165-.173.199-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>,
+      Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>,
+      Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>,
+      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>,
+      Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
+      Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>,
+      Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>,
+      Excel: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>,
+      Users: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+      Key: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+      Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+      Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+      FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>,
+      LogOut: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+      // ícone de auditoria (escudo com olho)
+      Audit: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+      ),
+      LoginIn: () => (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+        </svg>
+      ),
+      LoginOut: () => (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      ),
+      Clock: () => (
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
+        </svg>
+      ),
+      Download: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+      ),
+    };
+
+    // ─────────────────────────────────────────────
+    //  HELPER: registrar evento de auditoria
+    // ─────────────────────────────────────────────
+    const registrarAuditoria = async (usuario, acao, role = '') => {
+      try {
+        const agora = new Date();
+        await db.collection(COL_AUDITORIA).add({
+          usuario,
+          acao,          // 'login' | 'logout'
+          role,
+          timestamp: agora.toISOString(),
+          data: agora.toLocaleDateString('pt-BR'),
+          hora: agora.toLocaleTimeString('pt-BR'),
+          // Guarda epoch para ordenação precisa
+          epoch: agora.getTime()
+        });
+      } catch (e) {
+        console.error("Erro ao registrar auditoria:", e);
+      }
+    };
+
+    // ─────────────────────────────────────────────
+    //  MODAL DE AUDITORIA
+    // ─────────────────────────────────────────────
+    const AuditoriaModal = ({ onClose }) => {
+      const [logs, setLogs] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filtroAcao, setFiltroAcao] = useState("Todos");
+      const [filtroUsuario, setFiltroUsuario] = useState("");
+      const [newIds, setNewIds] = useState(new Set());
+
+      useEffect(() => {
+        // Listener em tempo real, ordenado por epoch descendente
+        const unsub = db.collection(COL_AUDITORIA)
+          .orderBy("epoch", "desc")
+          .limit(200)
+          .onSnapshot(snap => {
+            const novosIds = new Set();
+            const docs = snap.docs.map(d => {
+              const data = { id: d.id, ...d.data() };
+              // Marca como novo se foi adicionado agora (change.type === 'added' e doc recente)
+              return data;
+            });
+
+            // Detecta novos registros (docs que não estavam antes)
+            snap.docChanges().forEach(change => {
+              if (change.type === 'added') {
+                novosIds.add(change.doc.id);
+              }
+            });
+
+            setLogs(docs);
+            setNewIds(novosIds);
+            setLoading(false);
+
+            // Remove marcação de novo após animação
+            setTimeout(() => setNewIds(new Set()), 800);
+          });
+
+        return () => unsub();
+      }, []);
+
+      // Exportar logs para Excel
+      const exportarLogs = () => {
+        const dados = logsFiltrados.map(l => ({
+          Usuário: l.usuario,
+          Ação: l.acao === 'login' ? 'ENTRADA' : 'SAÍDA',
+          Perfil: l.role || '-',
+          Data: l.data,
+          Hora: l.hora,
+          Timestamp: l.timestamp
+        }));
+        const ws = XLSX.utils.json_to_sheet(dados);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
+        XLSX.writeFile(wb, `Auditoria_NB_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
+      };
+
+      const logsFiltrados = logs.filter(l => {
+        const matchAcao = filtroAcao === "Todos" || l.acao === filtroAcao;
+        const matchUser = !filtroUsuario || l.usuario.toLowerCase().includes(filtroUsuario.toLowerCase());
+        return matchAcao && matchUser;
+      });
+
+      // Conta entradas/saídas
+      const totalEntradas = logs.filter(l => l.acao === 'login').length;
+      const totalSaidas   = logs.filter(l => l.acao === 'logout').length;
+      const usuariosUnicos = [...new Set(logs.map(l => l.usuario))].length;
+
+      return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 fade-in">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            
+            {/* CABEÇALHO */}
+            <div className="bg-[#0f172a] px-6 py-4 flex justify-between items-center shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-500/20 p-2 rounded-lg">
+                  <Icons.Audit />
+                </div>
+                <div>
+                  <h2 className="text-white font-bold text-lg tracking-wide">AUDITORIA DE ACESSOS</h2>
+                  <p className="text-slate-400 text-xs">Monitoramento em tempo real · NB Advocacia</p>
+                </div>
+                {/* Indicador ao vivo */}
+                <div className="flex items-center gap-1.5 bg-green-900/40 border border-green-700/50 px-3 py-1 rounded-full ml-2">
+                  <span className="w-2 h-2 rounded-full bg-green-400 pulse-green inline-block"></span>
+                  <span className="text-green-400 text-[10px] font-bold uppercase tracking-widest">AO VIVO</span>
+                </div>
+              </div>
+              <button onClick={onClose} className="text-slate-400 hover:text-white transition p-1 rounded hover:bg-slate-700">
+                <Icons.X />
+              </button>
+            </div>
+
+            {/* CARDS DE RESUMO */}
+            <div className="grid grid-cols-3 gap-0 border-b bg-slate-50 shrink-0">
+              <div className="p-4 text-center border-r">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total de Registros</p>
+                <p className="text-2xl font-extrabold text-slate-700 mt-1">{logs.length}</p>
+              </div>
+              <div className="p-4 text-center border-r">
+                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Entradas</p>
+                <p className="text-2xl font-extrabold text-emerald-600 mt-1">{totalEntradas}</p>
+              </div>
+              <div className="p-4 text-center">
+                <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest">Saídas</p>
+                <p className="text-2xl font-extrabold text-rose-500 mt-1">{totalSaidas}</p>
+              </div>
+            </div>
+
+            {/* BARRA DE FILTROS */}
+            <div className="px-5 py-3 border-b bg-white flex flex-wrap gap-3 items-center shrink-0">
+              <div className="relative flex-1 min-w-[160px]">
+                <span className="absolute left-2.5 top-2.5 text-slate-400"><Icons.Search /></span>
+                <input
+                  type="text"
+                  placeholder="Filtrar por usuário..."
+                  className="pl-8 pr-3 py-2 border rounded-lg text-xs w-full outline-none focus:border-[#0f172a] bg-slate-50"
+                  value={filtroUsuario}
+                  onChange={e => setFiltroUsuario(e.target.value)}
+                />
+              </div>
+              <select
+                className="border rounded-lg px-3 py-2 text-xs bg-white font-bold text-slate-600 outline-none focus:border-[#0f172a]"
+                value={filtroAcao}
+                onChange={e => setFiltroAcao(e.target.value)}
+              >
+                <option value="Todos">Todos os Eventos</option>
+                <option value="login">Apenas Entradas</option>
+                <option value="logout">Apenas Saídas</option>
+              </select>
+              <button
+                onClick={exportarLogs}
+                className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg hover:bg-green-100 transition"
+              >
+                <Icons.Download /> Exportar Excel
+              </button>
+              <span className="text-[11px] text-slate-400 ml-auto">
+                {logsFiltrados.length} registro(s) exibido(s)
+              </span>
+            </div>
+
+            {/* TABELA */}
+            <div className="overflow-y-auto custom-scrollbar flex-1">
+              {loading ? (
+                <div className="flex items-center justify-center h-40 text-slate-400">
+                  <div className="text-center">
+                    <div className="w-8 h-8 border-2 border-slate-300 border-t-[#0f172a] rounded-full animate-spin mx-auto mb-2"></div>
+                    <p className="text-sm">Carregando registros...</p>
+                  </div>
+                </div>
+              ) : logsFiltrados.length === 0 ? (
+                <div className="flex items-center justify-center h-40 text-slate-400">
+                  <p className="text-sm">Nenhum registro encontrado.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-100 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b">
+                    <tr>
+                      <th className="px-5 py-3">Evento</th>
+                      <th className="px-5 py-3">Usuário</th>
+                      <th className="px-5 py-3">Perfil</th>
+                      <th className="px-5 py-3">Data</th>
+                      <th className="px-5 py-3">Horário</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {logsFiltrados.map((log, idx) => {
+                      const isEntrada = log.acao === 'login';
+                      const isNew = newIds.has(log.id);
+                      return (
+                        <tr
+                          key={log.id}
+                          className={`
+                            hover:bg-slate-50 transition-colors
+                            ${isNew ? 'audit-row-new bg-yellow-50/60' : ''}
+                            ${idx === 0 && !isNew ? 'bg-slate-50/40' : ''}
+                          `}
+                        >
+                          {/* BADGE DE EVENTO */}
+                          <td className="px-5 py-3">
+                            <span className={`
+                              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide
+                              ${isEntrada
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-rose-50 text-rose-600 border border-rose-200'}
+                            `}>
+                              {isEntrada ? <Icons.LoginIn /> : <Icons.LoginOut />}
+                              {isEntrada ? 'ENTRADA' : 'SAÍDA'}
+                            </span>
+                          </td>
+
+                          {/* USUÁRIO */}
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${isEntrada ? 'bg-emerald-500' : 'bg-rose-400'}`}>
+                                {log.usuario.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="font-semibold text-slate-700">{log.usuario}</span>
+                              {isNew && (
+                                <span className="text-[9px] bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded font-bold uppercase">novo</span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* PERFIL */}
+                          <td className="px-5 py-3">
+                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                              log.role === 'master' ? 'bg-purple-100 text-purple-700' :
+                              log.role === 'admin'  ? 'bg-blue-100 text-blue-700' :
+                              'bg-slate-100 text-slate-500'
+                            }`}>
+                              {log.role || 'viewer'}
+                            </span>
+                          </td>
+
+                          {/* DATA */}
+                          <td className="px-5 py-3 text-slate-600 font-mono text-xs">
+                            {log.data || '—'}
+                          </td>
+
+                          {/* HORÁRIO */}
+                          <td className="px-5 py-3">
+                            <span className="flex items-center gap-1 text-slate-600 font-mono text-xs">
+                              <Icons.Clock />
+                              {log.hora || '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* RODAPÉ */}
+            <div className="px-5 py-3 bg-slate-50 border-t text-[11px] text-slate-400 flex justify-between items-center shrink-0">
+              <span>Dados atualizados automaticamente em tempo real via Firestore</span>
+              <span className="text-slate-300">{usuariosUnicos} usuário(s) distintos nos registros</span>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- COMPONENTES AUXILIARES ---
+    const ChartComponent = ({ type, data, options }) => {
+        const canvasRef = useRef(null); const chartRef = useRef(null);
+        useEffect(() => {
+            if (!canvasRef.current) return;
+            if (chartRef.current) chartRef.current.destroy();
+            chartRef.current = new Chart(canvasRef.current, { type, data, options });
+            return () => { if (chartRef.current) chartRef.current.destroy(); };
+        }, [data, type, options]);
+        return <canvas ref={canvasRef} />;
+    };
+
+    const FichaModal = ({ p, onClose }) => {
+        return (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
+                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center shrink-0">
+                        <div><h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p></div>
+                        <div className="text-right text-xs text-slate-500"><p>Ficha Gerada em: {new Date().toLocaleDateString()}</p><p>ID: {p.id.slice(0,8)}</p></div>
+                    </div>
+                    <div className="space-y-6 overflow-y-visible">
+                        <div className="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div><div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
+                            </div>
+                        </div>
+                        <div className="border border-slate-200 p-4 rounded">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
+                                {p.ramo !== 'Previdenciário' && (<div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>)}
+                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            {p.ramo === 'Previdenciário' && (<div className="border border-blue-100 bg-blue-50/30 p-4 rounded"><h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3><ul className="text-xs space-y-1"><li><b>Benefício:</b> {p.patologia}</li><li><b>Login GOV:</b> {p.govLogin}</li><li><b>Senha GOV:</b> {p.govSenha}</li><li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li></ul></div>)}
+                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded"><h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3><div className="text-sm"><p><span className="font-bold">Valor:</span> {p.valorContrato}</p><p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p><p><span className="font-bold">Status:</span> {p.statusPagamento}</p></div></div>
+                        </div>
+                    </div>
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400 shrink-0"><p>Documento para uso interno e acompanhamento processual.</p><p>NB Advocacia - Todos os direitos reservados.</p></div>
+                    <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2"><Icons.Check/> IMPRIMIR / SALVAR PDF</button></div>
+                </div>
+            </div>
+        );
+    };
+
+    // --- UTILS ---
+    const formatCPF = (v) => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
+
+    // --- CALCULADORA ---
+    const CalculatorModal = ({ onClose }) => {
+        const [dataInicial, setDataInicial] = useState("");
+        const [dias, setDias] = useState("");
+        const [tipo, setTipo] = useState("uteis");
+        const [resultado, setResultado] = useState(null);
+        const [calcEstado, setCalcEstado] = useState("Pernambuco");
+        const [calcCidade, setCalcCidade] = useState("");
+        const [tipoProcesso, setTipoProcesso] = useState("Eletrônico");
+
+        useEffect(() => {
+            if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]);
+        }, [calcEstado]);
+
+        const calcular = () => {
+            if (!dataInicial || !dias) return;
+            const dt = new Date(dataInicial);
+            dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
+            let count = 0; const target = parseInt(dias);
+            while (count < target) {
+                dt.setDate(dt.getDate() + 1);
+                if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; }
+            }
+            setResultado(dt.toLocaleDateString('pt-BR'));
+        };
+
+        return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="w-full"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3><div className="border-b border-blue-100 w-1/2 mx-auto"></div></div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button>
+                    </div>
+                    <div className="space-y-3">
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (<option key={cidade} value={cidade}>{cidade}</option>))}</select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={tipoProcesso} onChange={e=>setTipoProcesso(e.target.value)}><option>Eletrônico</option><option>Físico</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option><option>TJPB</option></select>
+                    </div>
+                    <div className="mt-6 mb-2"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira a data da publicação</h3><div className="border-b border-blue-100 w-1/2 mx-auto mb-4"></div></div>
+                    <div className="space-y-4">
+                        <input type="date" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
+                        <input type="number" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" placeholder="Prazo em dias" value={dias} onChange={e=>setDias(e.target.value)}/>
+                    </div>
+                    <div className="flex justify-center gap-8 py-4">
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label>
+                    </div>
+                    <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow hover:bg-orange-700 transition duration-200">Calcular</button>
+                    {resultado && (<div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4"><p className="text-xs text-green-700 font-bold uppercase tracking-widest">Prazo Final</p><p className="text-3xl font-extrabold text-green-800 mt-1">{resultado}</p></div>)}
+                </div>
+            </div>
+        );
+    };
+
+    // --- LOGIN ---
+    const LoginScreen = ({ onLogin }) => {
+      const [user, setUser] = useState("");
+      const [pass, setPass] = useState("");
+      const [error, setError] = useState("");
+
+      const handle = async (e) => {
+        e.preventDefault();
+        try {
+            const doc = await db.collection(COL_USUARIOS).doc(user).get();
+            if (doc.exists && doc.data().senha === pass) {
+                // ← Registra auditoria de login
+                await registrarAuditoria(user, 'login', doc.data().role || 'viewer');
+                onLogin(user, doc.data().role || 'viewer');
+                return;
+            }
+        } catch(e) { console.log("Verificando hardcode..."); }
+
+        if (user === "NB ADVOCACIA" && pass === "NB07242530") {
+            await registrarAuditoria(user, 'login', 'master');
+            onLogin(user, "master");
+            return;
+        }
+        setError("Dados incorretos.");
+      };
+
+      return (
+        <div className="min-h-screen bg-navy flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in">
+            <div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
+            <form onSubmit={handle} className="space-y-4">
+              <input className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
+              <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
+              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+              <button className="w-full bg-navy text-white py-3 rounded font-bold hover:bg-slate-800 transition">ENTRAR</button>
+            </form>
+          </div>
+        </div>
+      );
+    };
+
+    // --- APP ---
+    const AppContent = () => {
       const [authOk, setAuthOk] = useState(false);
       const [user, setUser] = useState("");
       const [role, setRole] = useState("viewer");
-      const [aba, setAba] = useState("processos");
       const [processos, setProcessos] = useState([]);
-      const [logs, setLogs] = useState([]);
-      const [users, setUsers] = useState([]);
-      
-      const [modal, setModal] = useState(false);
-      const [calcModal, setCalcModal] = useState(false);
-      const [senhaModal, setSenhaModal] = useState(false);
-      const [editId, setEditId] = useState(null);
       const [busca, setBusca] = useState("");
+      const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
+      const [aba, setAba] = useState('dashboard');
 
-      const [form, setForm] = useState({ cliente: "", ramo: "Cível", advogado: "Evison Nascimento", parteContraria: "", govLogin: "", govSenha: "" });
+      const [modal, setModal] = useState(false);
+      const [fichaModal, setFichaModal] = useState(null);
+      const [calcModal, setCalcModal] = useState(false);
+      const [auditoriaModal, setAuditoriaModal] = useState(false); // ← NOVO
+      const [editingId, setEditingId] = useState(null);
+      const [modalSenha, setModalSenha] = useState(false);
       const [novaSenha, setNovaSenha] = useState("");
+      const [listaUsuarios, setListaUsuarios] = useState([]);
+      const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
+      const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
+      const [novoMembro, setNovoMembro] = useState("");
 
-      const registrarLog = (acao, detalhe) => {
-        db.collection('auditoria_juridica_nb').add({ data: new Date().toISOString(), usuario: user, acao, detalhe });
+      const initialForm = {
+        cliente: "", cpf: "", telefone: "", descricao: "", 
+        rua: "", numero: "", bairro: "", cidade: "", estado: "PE",
+        parteContraria: "", tipoParteContraria: "Pessoa Física",
+        numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Evison Nascimento",
+        prazo: "", statusProcessual: "Em Andamento",
+        patologia: "", govLogin: "", govSenha: "", 
+        dataEntrada: "", statusBeneficio: "Em Análise", dataPericia: "", dataSocial: "",
+        procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "",
+        tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", valorContrato: "", statusPagamento: "Pendente"
       };
+      const [formData, setFormData] = useState(initialForm);
+
+      const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
+
+      // ← Logout registra auditoria antes de recarregar
+      const handleLogout = async () => {
+        try {
+          await registrarAuditoria(user, 'logout', role);
+        } catch(e) { /* não bloqueia o logout */ }
+        window.location.reload();
+      };
+
+      // FECHAR COM ESC
+      useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                setModal(false); setCalcModal(false);
+                setFichaModal(null); setModalSenha(false);
+                setAuditoriaModal(false); // ← NOVO
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+      }, []);
 
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously();
-        const esc = (e) => { if (e.key === 'Escape') { setModal(false); setCalcModal(false); setSenhaModal(false); } };
-        window.addEventListener('keydown', esc);
-        const unsub = db.collection('gestao_processos_nb').onSnapshot(s => setProcessos(s.docs.map(d => ({id: d.id, ...d.data()}))));
-        return () => { window.removeEventListener('keydown', esc); unsub(); };
+        const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => {
+            if (doc.exists && doc.data().nomes) setListaEquipe(doc.data().nomes);
+            else db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: LISTA_EQUIPE_PADRAO });
+        });
+        return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
       useEffect(() => {
-        if (aba === "auditoria") db.collection('auditoria_juridica_nb').orderBy('data', 'desc').limit(50).onSnapshot(s => setLogs(s.docs.map(d => ({id: d.id, ...d.data()}))));
-        if (aba === "equipe") db.collection('credenciais_advocacia').onSnapshot(s => setUsers(s.docs.map(d => ({id: d.id, ...d.data()}))));
-      }, [aba]);
+        if (aba === 'equipe' && role === 'master') {
+            db.collection(COL_USUARIOS).get().then(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        }
+      }, [aba, role]);
 
-      const handleLogin = async (e) => {
-        e.preventDefault();
-        const u = document.getElementById('u').value;
-        const p = document.getElementById('p').value;
-        if (u === "NB ADVOCACIA" && p === "NB07242530") { setUser(u); setRole("master"); setAuthOk(true); return; }
-        const doc = await db.collection('credenciais_advocacia').doc(u).get();
-        if (doc.exists && doc.data().senha === p) { setUser(u); setRole(doc.data().role); setAuthOk(true); }
-        else alert("Acesso negado");
-      };
+      const stats = useMemo(() => {
+          const total = processos.length;
+          const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento').length;
+          const conclusos = processos.filter(p => p.statusProcessual === 'Concluso').length;
+          const ramosCount = {};
+          processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
+          return { total, ativos, conclusos, ramosCount };
+      }, [processos]);
 
-      const salvarProcesso = async () => {
-        if (!form.cliente) return alert("Cliente obrigatório");
-        if (editId) await db.collection('gestao_processos_nb').doc(editId).update(form);
-        else await db.collection('gestao_processos_nb').add({...form, criadoEm: new Date().toISOString()});
-        registrarLog(editId ? "EDIÇÃO" : "CRIAÇÃO", form.cliente);
-        setModal(false); setEditId(null);
-      };
+      const adicionarMembroEquipe = async () => { if (!novoMembro) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: [...listaEquipe, novoMembro] }); setNovoMembro(""); };
+      const removerMembroEquipe = async (nome) => { if(!confirm("Remover?")) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: listaEquipe.filter(n => n !== nome) }); };
+      const alterarSenha = async () => { if (!novaSenha || novaSenha.length < 4) return alert("Senha curta."); await db.collection(COL_USUARIOS).doc(user).set({ senha: novaSenha, role: role }, { merge: true }); alert("Senha alterada!"); setModalSenha(false); setNovaSenha(""); };
+      const salvarUsuario = async () => { if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo."); await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role }); alert("Salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"}); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
+      const excluirUsuario = async (id) => { if (!confirm("Remover?")) return; await db.collection(COL_USUARIOS).doc(id).delete(); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
+      const salvar = async () => { if (!formData.cliente) return alert("Nome do cliente obrigatório."); try { if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData); else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()}); setModal(false); setEditingId(null); setFormData(initialForm); } catch (e) { alert("Erro ao salvar."); } };
+      const apagar = async (id) => { if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
+      const exportar = () => { const ws = XLSX.utils.json_to_sheet(processos); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Processos"); XLSX.writeFile(wb, "Processos_NB.xlsx"); };
 
-      if (!authOk) return (
-        <div className="min-h-screen bg-navy flex items-center justify-center p-4">
-          <form onSubmit={handleLogin} className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm space-y-4">
-            <h2 className="text-2xl font-bold text-center text-slate-800">NB ADVOCACIA</h2>
-            <input id="u" className="w-full p-2 border rounded" placeholder="Usuário" required />
-            <input id="p" type="password" className="w-full p-2 border rounded" placeholder="Senha" required />
-            <button className="w-full bg-navy text-white py-2 rounded font-bold">ENTRAR</button>
-          </form>
-        </div>
-      );
+      const processosFiltrados = processos.filter(p => {
+          const matchBusca = p.cliente.toLowerCase().includes(busca.toLowerCase()) || (p.cpf && p.cpf.includes(busca));
+          const matchResp = filtroResponsavel === "Todos" || p.advogado === filtroResponsavel;
+          return matchBusca && matchResp;
+      });
+
+      if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
       return (
-        <div className="min-h-screen">
-          <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50">
-            <h1 className="font-bold text-navy flex items-center gap-2">NB ADVOCACIA <span className="text-[10px] bg-slate-100 px-2 rounded">{role.toUpperCase()}</span></h1>
-            <div className="flex gap-2">
-              <button onClick={()=>setAba("processos")} className={`px-3 py-1 rounded text-sm font-bold ${aba==="processos"?"bg-navy text-white":"text-slate-500"}`}>Processos</button>
-              <button onClick={()=>setAba("auditoria")} className={`px-3 py-1 rounded text-sm font-bold ${aba==="auditoria"?"bg-navy text-white":"text-slate-500"}`}>Audit</button>
-              {role === "master" && <button onClick={()=>setAba("equipe")} className={`px-3 py-1 rounded text-sm font-bold ${aba==="equipe"?"bg-navy text-white":"text-slate-500"}`}>Equipe</button>}
-              <button onClick={()=>setCalcModal(true)} className="p-2 bg-slate-100 rounded hover:bg-slate-200"><SvgIcon name="calc"/></button>
-              <button onClick={()=>setSenhaModal(true)} className="p-2 bg-slate-100 rounded hover:bg-slate-200"><SvgIcon name="key"/></button>
-              {role !== "viewer" && <button onClick={()=>{setEditId(null); setForm({cliente:"",ramo:"Cível",advogado:"Evison Nascimento",parteContraria:""}); setModal(true);}} className="bg-yellow-600 text-white px-4 py-1 rounded font-bold flex items-center gap-1"><SvgIcon name="plus"/> NOVO</button>}
-              <button onClick={()=>window.location.reload()} className="text-red-500 font-bold text-sm ml-2">Sair</button>
-            </div>
+        <div className="min-h-screen pb-20 fade-in">
+          <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm flex justify-between items-center no-print">
+             <div className="flex items-center gap-3">
+                 <div className="text-yellow-600"><Icons.Scale /></div>
+                 <div><h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1><span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role === 'master' ? 'Painel Mestre' : `Dr(a). ${user}`}</span></div>
+             </div>
+             <div className="flex gap-2 items-center flex-wrap">
+                 <button onClick={()=>setAba('dashboard')} className={`hidden md:flex px-3 py-2 rounded text-sm font-bold items-center gap-2 border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
+                 <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='processos'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>Processos</button>
+                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Calculator/> Calc</button>
+                 
+                 {role === 'master' && (
+                   <button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>
+                 )}
+
+                 {/* ─── BOTÃO DE AUDITORIA (só master) ─── */}
+                 {role === 'master' && (
+                   <button
+                     onClick={() => setAuditoriaModal(true)}
+                     className="px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition relative"
+                     title="Auditoria de Acessos"
+                   >
+                     <Icons.Audit />
+                     Auditoria
+                     {/* Ponto verde indicando que está monitorando */}
+                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white pulse-green"></span>
+                   </button>
+                 )}
+                 
+                 <button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200" title="Alterar Senha"><Icons.Key/></button>
+                 
+                 {(role !== 'viewer') && (
+                   <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors"><Icons.Plus/> NOVO</button>
+                 )}
+                 
+                 <button onClick={handleLogout} className="p-2 text-red-400 hover:text-red-600 border border-red-100 rounded bg-red-50 hover:bg-red-100 transition" title="Sair do Sistema"><Icons.LogOut/></button>
+             </div>
           </header>
 
-          <main className="max-w-7xl mx-auto p-6">
-            {aba === "processos" && (
-              <div className="bg-white rounded-xl shadow border overflow-hidden fade-in">
-                <div className="p-4 border-b bg-slate-50"><input className="w-full p-2 border rounded" placeholder="Filtrar por nome..." value={busca} onChange={e=>setBusca(e.target.value)}/></div>
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-100 text-slate-500 font-bold uppercase text-[10px]"><tr><th className="p-4">Cliente</th><th className="p-4">Ramo</th><th className="p-4 text-center">Ações</th></tr></thead>
-                  <tbody className="divide-y">
-                    {processos.filter(p=>p.cliente.toLowerCase().includes(busca.toLowerCase())).map(p => (
-                      <tr key={p.id} className="hover:bg-slate-50">
-                        <td className="p-4 font-bold">{p.cliente}</td>
-                        <td className="p-4">{p.ramo}</td>
-                        <td className="p-4 flex justify-center gap-4">
-                          <button onClick={()=>{setEditId(p.id); setForm(p); setModal(true);}} className="text-blue-500"><SvgIcon name="edit"/></button>
-                          {role !== "viewer" && <button onClick={async ()=>{if(confirm("Excluir?")){await db.collection('gestao_processos_nb').doc(p.id).delete(); registrarLog("EXCLUSÃO", p.cliente);}}} className="text-red-400"><SvgIcon name="trash"/></button>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <main className="max-w-7xl mx-auto px-6 py-8">
+             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
+             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
+             {auditoriaModal && <AuditoriaModal onClose={()=>setAuditoriaModal(false)} />}
 
-            {aba === "auditoria" && (
-              <div className="bg-white rounded-xl shadow border overflow-hidden fade-in">
-                <div className="p-4 bg-slate-100 font-bold text-xs flex justify-between">AUDITORIA DE SISTEMA {role === "master" && <button onClick={async ()=>{if(confirm("Limpar?")){const b = db.batch(); const s = await db.collection('auditoria_juridica_nb').get(); s.forEach(d=>b.delete(d.ref)); await b.commit();}}} className="text-red-500 underline">Limpar Logs</button>}</div>
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 border-b"><tr><th className="p-3">Data</th><th className="p-3">Usuário</th><th className="p-3">Ação</th><th className="p-3">Detalhe</th></tr></thead>
-                  <tbody>{logs.map(l => (<tr key={l.id} className="border-b"><td className="p-3 whitespace-nowrap">{new Date(l.data).toLocaleString()}</td><td className="p-3 font-bold">{l.usuario}</td><td className="p-3 uppercase">{l.acao}</td><td className="p-3">{l.detalhe}</td></tr>))}</tbody>
-                </table>
-              </div>
-            )}
+             {/* DASHBOARD */}
+             {aba === 'dashboard' && (
+                 <div className="space-y-6 fade-in">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3 className="text-xs font-bold text-slate-500 uppercase">Total</h3><p className="text-3xl font-bold text-slate-800">{stats.total}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Em Andamento</h3><p className="text-3xl font-bold text-blue-600">{stats.ativos}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Conclusos</h3><p className="text-3xl font-bold text-green-600">{stats.conclusos}</p></div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Áreas de Atuação</h4><div className="h-60 flex justify-center"><ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} /></div></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Volume</h4><div className="h-60"><ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }} /></div></div>
+                     </div>
+                 </div>
+             )}
 
-            {aba === "equipe" && role === "master" && (
-              <div className="bg-white p-6 rounded-xl shadow border fade-in space-y-4">
-                <h3 className="font-bold text-slate-700">Gestão de Equipe</h3>
-                <div className="flex gap-2">
-                  <input id="unome" className="p-2 border rounded flex-1" placeholder="Login"/>
-                  <input id="usenha" className="p-2 border rounded flex-1" placeholder="Senha"/>
-                  <select id="urole" className="p-2 border rounded bg-white"><option value="viewer">Visualizador</option><option value="admin">Admin</option></select>
-                  <button onClick={async ()=>{const n=document.getElementById('unome').value; const s=document.getElementById('usenha').value; const r=document.getElementById('urole').value; if(n) await db.collection('credenciais_advocacia').doc(n).set({senha:s, role:r}); alert("Salvo"); setAba("processos"); setAba("equipe");}} className="bg-navy text-white px-4 rounded font-bold">Salvar</button>
-                </div>
-                <div className="divide-y border rounded">
-                  {users.map(u => (<div key={u.id} className="p-3 flex justify-between items-center"><div><span className="font-bold">{u.id}</span> <span className="text-xs text-slate-400">({u.role})</span></div><button onClick={async ()=>{if(confirm("Remover?")) await db.collection('credenciais_advocacia').doc(u.id).delete(); setAba("processos"); setAba("equipe");}} className="text-red-400"><SvgIcon name="trash"/></button></div>))}
-                </div>
-              </div>
-            )}
+             {/* EQUIPE */}
+             {aba === 'equipe' && role === 'master' && (
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3><div className="bg-slate-50 p-4 rounded border mb-4 space-y-2"><input className="w-full p-2 border rounded" placeholder="Nome (Login)" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/><div className="flex gap-2"><input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/><select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select><button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button></div></div><table className="w-full text-sm text-left"><thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead><tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>))}</tbody></table></div>
+                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico</h3><div className="flex gap-2 mb-4"><input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/><button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button></div><ul className="divide-y border rounded">{listaEquipe.map((nome, i) => (<li key={i} className="p-3 flex justify-between items-center bg-slate-50"><span className="font-bold text-slate-700">{nome}</span><button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button></li>))}</ul></div>
+                 </div>
+             )}
+
+             {/* PROCESSOS */}
+             {aba === 'processos' && (
+                 <div className="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
+                     <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
+                         <div className="relative flex-1 w-full"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search/></span><input type="text" placeholder="Buscar cliente..." className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full outline-none focus:border-navy" value={busca} onChange={e => setBusca(e.target.value)} /></div>
+                         <div className="flex items-center gap-2 w-full md:w-auto"><div className="relative w-full md:w-60"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Filter/></span><select className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full bg-white font-bold text-slate-600 outline-none focus:border-navy" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}><option value="Todos">Todos os Responsáveis</option>{listaEquipe.map(nome => <option key={nome} value={nome}>Apenas {nome.split(' ')[0]}</option>)}</select></div><button onClick={exportar} className="flex items-center gap-1 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded hover:bg-green-100"><Icons.Excel/> Excel</button></div>
+                     </div>
+                     <div className="overflow-x-auto">
+                         <table className="w-full text-sm text-left whitespace-nowrap">
+                             <thead className="bg-slate-100 text-slate-500 font-bold border-b"><tr><th className="px-4 py-3">Status</th><th className="px-4 py-3">Cliente / Local</th><th className="px-4 py-3">Processo/Ramo</th><th className="px-4 py-3">Resp.</th><th className="px-4 py-3">Prazo</th><th className="px-4 py-3">Financeiro</th><th className="px-4 py-3 text-center">Ações</th></tr></thead>
+                             <tbody className="divide-y">
+                                 {processosFiltrados.map(p => (
+                                     <tr key={p.id} className="hover:bg-slate-50">
+                                         <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${p.statusProcessual==='Concluso'?'bg-green-100 text-green-700':'bg-blue-50 text-blue-700'}`}>{p.statusProcessual}</span></td>
+                                         <td className="px-4 py-3"><div className="font-bold text-slate-700 flex items-center gap-2">{p.cliente} {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500"><Icons.WhatsApp/></button>}</div><div className="text-xs text-slate-400">{p.cidade} - {p.estado}</div></td>
+                                         <td className="px-4 py-3"><div className="text-slate-700 font-mono text-xs">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div><div className="text-xs text-slate-400">{p.ramo}</div></td>
+                                         <td className="px-4 py-3 text-slate-600 font-medium">{p.advogado}</td>
+                                         <td className="px-4 py-3 text-red-600 font-bold">{p.prazo ? new Date(p.prazo).toLocaleDateString() : '-'}</td>
+                                         <td className="px-4 py-3"><div className="text-xs">{p.valorContrato || '0,00'}</div><span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span></td>
+                                         <td className="px-4 py-3 text-center flex justify-center gap-2">
+                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy" title="Ficha"><Icons.FileText/></button>
+                                             <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-400 hover:text-navy" title="Editar"><Icons.Edit/></button>
+                                             {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-slate-300 hover:text-red-500" title="Excluir"><Icons.Trash/></button>}
+                                         </td>
+                                     </tr>
+                                 ))}
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
+             )}
           </main>
 
-          {/* MODAL PROCESSO */}
-          {modal && (
-            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="bg-navy text-white p-4 flex justify-between"><h3 className="font-bold text-xs uppercase">{editId?"EDITAR":"NOVO"} PROCESSO</h3><button onClick={()=>setModal(false)}><SvgIcon name="x"/></button></div>
-                <div className="p-6 overflow-y-auto custom-scrollbar space-y-4">
-                  <div><label className="text-[10px] font-bold text-slate-400 uppercase">Cliente</label><input className="w-full p-2 border rounded-lg font-bold" value={form.cliente} onChange={e=>setForm({...form, cliente: e.target.value})}/></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase">Ramo</label><select className="w-full p-2 border rounded-lg bg-white" value={form.ramo} onChange={e=>setForm({...form, ramo: e.target.value})}>{["Cível", "Previdenciário", "Trabalhista", "Penal"].map(r=><option key={r}>{r}</option>)}</select></div>
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded-lg bg-white" value={form.advogado} onChange={e=>setForm({...form, advogado: e.target.value})}><option>Evison Nascimento</option><option>Adiellyson Bomfim</option></select></div>
-                  </div>
-                  {form.ramo !== "Previdenciário" && (<div><label className="text-[10px] font-bold text-red-400 uppercase">Parte Contrária</label><input className="w-full p-2 border rounded-lg bg-red-50" placeholder="Nome do Réu" value={form.parteContraria} onChange={e=>setForm({...form, parteContraria: e.target.value})}/></div>)}
-                  {form.ramo === "Previdenciário" && (<div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-2"><p className="text-[10px] font-bold text-blue-800 uppercase">Dados GOV</p><input className="w-full p-2 border rounded bg-white text-xs" placeholder="Login" value={form.govLogin} onChange={e=>setForm({...form, govLogin: e.target.value})}/><input className="w-full p-2 border rounded bg-white text-xs" placeholder="Senha" value={form.govSenha} onChange={e=>setForm({...form, govSenha: e.target.value})}/></div>)}
-                </div>
-                <div className="p-4 border-t bg-slate-50 flex gap-2"><button onClick={()=>setModal(false)} className="flex-1 py-2 border rounded font-bold text-slate-500">CANCELAR</button><button onClick={salvarProcesso} className="flex-1 bg-navy text-white py-2 rounded font-bold">SALVAR</button></div>
-              </div>
-            </div>
-          )}
-
           {/* MODAL SENHA */}
-          {senhaModal && (
-            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-              <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm space-y-4">
-                <h3 className="font-bold flex items-center gap-2"><SvgIcon name="key"/> Alterar Senha</h3>
-                <input type="password"  className="w-full p-2 border rounded" placeholder="Nova Senha" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
-                <div className="flex gap-2"><button onClick={()=>setSenhaModal(false)} className="flex-1 p-2 border rounded">Cancelar</button><button onClick={async ()=>{if(novaSenha){await db.collection('credenciais_advocacia').doc(user).set({senha:novaSenha, role}, {merge:true}); registrarLog("SEGURANÇA", "Senha alterada"); setSenhaModal(false); setNovaSenha("");}}} className="flex-1 bg-navy text-white p-2 rounded font-bold">Salvar</button></div>
+          {modalSenha && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+                <h3 className="font-bold text-lg text-slate-800 mb-4 flex gap-2 items-center"><Icons.Key/> Alterar Minha Senha</h3>
+                <input type="password" placeholder="Nova Senha" className="w-full p-2 border rounded mb-4" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/>
+                <div className="flex gap-2">
+                  <button onClick={()=>setModalSenha(false)} className="flex-1 py-2 border rounded hover:bg-slate-50">Cancelar</button>
+                  <button onClick={alterarSenha} className="flex-1 py-2 bg-navy text-white rounded font-bold hover:bg-slate-800">Salvar</button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* CALCULADORA (PRAZO FÁCIL) */}
-          {calcModal && (
-            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl w-full max-w-md p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                <button onClick={()=>setCalcModal(false)} className="absolute top-4 right-4 text-slate-400">×</button>
-                <div className="space-y-4">
-                  <h3 className="text-center text-blue-900 font-bold uppercase text-xs">Calcular Prazo</h3>
-                  <select className="w-full p-2 border rounded"><option>Pernambuco</option><option>Paraíba</option></select>
-                  <input className="w-full p-2 border rounded" placeholder="Município"/>
-                  <select className="w-full p-2 border rounded"><option>Eletrônico</option><option>Físico</option></select>
-                  <input type="date" id="cdata" className="w-full p-2 border rounded text-center"/>
-                  <input type="number" id="cdias" className="w-full p-2 border rounded text-center" placeholder="Prazo em dias"/>
-                  <button onClick={()=>{
-                    const d=new Date(document.getElementById('cdata').value); const n=parseInt(document.getElementById('cdias').value); 
-                    if(!d || !n) return; d.setMinutes(d.getMinutes() + d.getTimezoneOffset());
-                    let c=0; while(c<n){ d.setDate(d.getDate()+1); if(d.getDay()!==0 && d.getDay()!==6) c++; }
-                    alert("Prazo Final: " + d.toLocaleDateString('pt-BR'));
-                  }} className="w-full bg-orange-600 text-white font-bold py-2 rounded">CALCULAR</button>
+          {/* MODAL NOVO/EDITAR PROCESSO */}
+          {modal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-navy px-6 py-4 flex justify-between items-center shrink-0"><div className="flex items-center gap-2 text-yellow-500"><Icons.Scale /><h3 className="text-lg font-bold text-white tracking-wide">{editingId ? 'EDITAR' : 'NOVO CADASTRO'}</h3></div><button onClick={()=>setModal(false)} className="text-slate-400 hover:text-white"><Icons.X /></button></div>
+                    <div className="p-6 overflow-y-auto custom-scrollbar space-y-5">
+                        <div className="space-y-3">
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cliente</label><input className="w-full p-2 border rounded bg-slate-50 font-bold text-slate-700 outline-none focus:border-yellow-600" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/></div>
+                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">CPF</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Telefone</label><input className="w-full p-2 border rounded outline-none focus:border-yellow-600" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div></div>
+                            <div className="grid grid-cols-3 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">UF</label><select className="w-full p-2 border rounded bg-white" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cidade</label><input className="w-full p-2 border rounded" placeholder="Nome da cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div></div>
+                            <div className="grid grid-cols-3 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Rua</label><input className="w-full p-2 border rounded" value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Nº</label><input className="w-full p-2 border rounded" value={formData.numero} onChange={e=>setFormData({...formData, numero: e.target.value})}/></div><div className="col-span-3"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Bairro</label><input className="w-full p-2 border rounded" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div></div>
+                            <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descrição</label><textarea className="w-full p-2 border rounded text-sm h-20 resize-none outline-none focus:border-yellow-600" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
+                        </div>
+                        <hr className="border-slate-100"/>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-4 mb-2"><label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Ramo:</label><select className="p-1 border rounded text-sm font-bold text-navy" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select></div>
+                            {formData.ramo !== 'Previdenciário' && (
+                                <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-3">
+                                    <h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
+                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
+                                    </div>
+                                </div>
+                            )}
+                            {formData.ramo === 'Previdenciário' ? (<div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div></div></div>) : (<div className="grid grid-cols-2 gap-3"><div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span></div>{!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}</div>)}
+                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div><div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div></div>
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200"><div className="flex items-center gap-2 mb-2"><span className="text-xs font-bold text-slate-600 uppercase">Anexos (Links Nuvem)</span></div><div className="space-y-2"><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Procuração</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/></div><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Contrato</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/></div></div></div>
+                        <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100"><h4 className="text-xs font-bold text-orange-800 uppercase mb-2">Honorários</h4><div className="grid grid-cols-2 gap-3 mb-2"><div><label className="text-[10px] font-bold text-slate-400">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div><div><label className="text-[10px] font-bold text-slate-400">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div></div>{formData.tipoPagamento === 'Parcelado' ? (<div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400">Qtd</label><input type="number" className="w-full p-2 border rounded text-sm" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400">Valor Parc.</label><input className="w-full p-2 border rounded text-sm" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div></div>) : (<div><label className="text-[10px] font-bold text-slate-400">Valor Total</label><input className="w-full p-2 border rounded text-sm font-bold" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>)}</div>
+                    </div>
+                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 rounded-lg border text-slate-500 font-bold hover:bg-slate-100 transition">CANCELAR</button><button onClick={salvar} className="flex-[2] py-3 rounded-lg bg-navy text-white font-bold hover:bg-slate-800 shadow transition flex items-center justify-center gap-2"><Icons.Check/> SALVAR</button></div>
                 </div>
-              </div>
             </div>
           )}
         </div>
       );
     };
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<AppContent />);
   </script>
 </body>
 </html>
