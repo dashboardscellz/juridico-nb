@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v29.0</title>
+  <title>NB Advocacia - Gestão Jurídica v17.5</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -21,8 +22,19 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .bg-navy { background-color: #0f172a; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    @media print { .no-print { display: none !important; } #print-area { visibility: visible; position: absolute; left: 0; top: 0; width: 100%; } }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    @keyframes pulse-green { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
+    .pulse-green { animation: pulse-green 1.5s infinite; }
+    @keyframes slideInRow { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+    .audit-row-new { animation: slideInRow 0.4s ease-out; }
+    @media print {
+      body * { visibility: hidden; }
+      #print-area, #print-area * { visibility: visible; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -41,197 +53,357 @@
       measurementId: "G-9380LF0TYF"
     };
 
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const db = firebase.firestore();
     const auth = firebase.auth();
     
     const COL_PROCESSOS = 'gestao_processos_nb';
     const COL_USUARIOS = 'credenciais_advocacia';
-    const COL_AUDITORIA = 'auditoria_juridica_nb';
+    const COL_PROFISSIONAIS = 'equipe_nomes_nb'; 
+    const COL_AUDITORIA = 'auditoria_acessos_nb';
+
+    const DADOS_ESTADOS = {
+        "Pernambuco": ["Recife","Jaboatão dos Guararapes","Olinda","Caruaru","Petrolina","Paulista","Cabo de Santo Agostinho","Camaragibe","Garanhuns","Vitória de Santo Antão","Igarassu","São Lourenço da Mata","Abreu e Lima","Santa Cruz do Capibaribe","Ipojuca","Serra Talhada","Araripina","Gravatá","Carpina","Goiana","Belo Jardim","Arcoverde","Ouricuri","Escada","Pesqueira","Surubim","Palmares","Moreno","Bezerros","Salgueiro","São Bento do Una","Buíque","Paudalho","Limoeiro","Timbaúba","Brejo da Madre de Deus","Bom Conselho","Ribeirão","Sirinhaém","Águas Belas","Lajedo","Bonito","Toritama","Catende","Barreiros","Santa Maria da Boa Vista","Bom Jardim","São José do Belmonte","Bodocó","Afogados da Ingazeira"],
+        "Paraíba": ["João Pessoa","Campina Grande","Santa Rita","Patos","Bayeux","Sousa","Cajazeiras","Cabedelo","Guarabira","Sapé","Queimadas","Mamanguape","Pombal","Monteiro","São Bento","Esperança","Catolé do Rocha","Pedras de Fogo","Lagoa Seca","Conde"]
+    };
+
+    const LISTA_ESTADOS = ["PE", "PB"];
+    const LISTA_RAMOS = ["Cível","Previdenciário","Trabalhista","Penal","Família e Sucessões","Consumidor","Administrativo","Tributário","Empresarial","Eleitoral","Ambiental","Digital","Imobiliário","Militar","Agrário","Outros"];
+    const LISTA_EQUIPE_PADRAO = ["Evison Nascimento","Adiellyson Bomfim","Manassés Oliveira (Estagiário)","Bárbara Brenda (Estagiária)"];
 
     const Icons = {
-      Scale: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2"/></svg>,
-      Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>,
-      Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
-      Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>,
-      Audit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
-      Key: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3m-3-3l2.5-2.5"/></svg>,
-      LogOut: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
-      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      Scale: () => <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>,
+      WhatsApp: () => <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.867-2.031-.967-.272-.099-.47-.149-.669.198-.199.347-.768.967-.941 1.165-.173.199-.347.223-.644.074-.297-.149-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>,
+      Plus: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>,
+      Search: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>,
+      X: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>,
+      Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>,
+      Edit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>,
+      Calculator: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>,
+      Excel: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"></path></svg>,
+      Users: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+      Key: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+      Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+      Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+      FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>,
+      LogOut: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+      Audit: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
+      LoginIn: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>,
+      LoginOut: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
+      Clock: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/></svg>,
+      Download: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
+    };
+
+    const registrarAuditoria = async (usuario, acao, role = '') => {
+      try {
+        const agora = new Date();
+        await db.collection(COL_AUDITORIA).add({
+          usuario, acao, role,
+          timestamp: agora.toISOString(),
+          data: agora.toLocaleDateString('pt-BR'),
+          hora: agora.toLocaleTimeString('pt-BR'),
+          epoch: agora.getTime()
+        });
+      } catch (e) { console.error("Erro auditoria:", e); }
+    };
+
+    const AuditoriaModal = ({ onClose, isAdminMaster }) => {
+      const [logs, setLogs] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filtroAcao, setFiltroAcao] = useState("Todos");
+      const [filtroUsuario, setFiltroUsuario] = useState("");
+      const [newIds, setNewIds] = useState(new Set());
+
+      useEffect(() => {
+        const unsub = db.collection(COL_AUDITORIA).orderBy("epoch", "desc").limit(300).onSnapshot(snap => {
+            const novosIds = new Set();
+            const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            snap.docChanges().forEach(change => { if (change.type === 'added') novosIds.add(change.doc.id); });
+            setLogs(docs); setNewIds(novosIds); setLoading(false);
+            setTimeout(() => setNewIds(new Set()), 1000);
+          });
+        return () => unsub();
+      }, []);
+
+      const exportarLogs = () => {
+        const dados = logs.map(l => ({ Usuário: l.usuario, Ação: l.acao === 'login' ? 'ENTRADA' : 'SAÍDA', Perfil: l.role, Data: l.data, Hora: l.hora }));
+        const ws = XLSX.utils.json_to_sheet(dados);
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Auditoria");
+        XLSX.writeFile(wb, `Auditoria_NB_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
+      };
+
+      const limparAuditoria = async () => {
+        if (!confirm("⚠️ ATENÇÃO: Isso excluirá permanentemente todo o histórico de acessos visível. Deseja continuar?")) return;
+        try {
+          const batch = db.batch();
+          logs.forEach(log => batch.delete(db.collection(COL_AUDITORIA).doc(log.id)));
+          await batch.commit();
+          alert("Histórico limpo com sucesso!");
+        } catch (e) { alert("Erro ao limpar histórico."); }
+      };
+
+      const logsFiltrados = logs.filter(l => (filtroAcao === "Todos" || l.acao === filtroAcao) && (!filtroUsuario || l.usuario.toLowerCase().includes(filtroUsuario.toLowerCase())));
+
+      return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 fade-in">
+          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="bg-[#0f172a] px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500"><Icons.Audit /></div>
+                <div><h2 className="text-white font-bold text-lg">AUDITORIA DE ACESSOS</h2><p className="text-slate-400 text-xs">Monitoramento em Tempo Real</p></div>
+                <div className="flex items-center gap-1.5 bg-green-900/40 border border-green-700/50 px-3 py-1 rounded-full ml-2"><span className="w-2 h-2 rounded-full bg-green-400 pulse-green"></span><span className="text-green-400 text-[10px] font-bold">AO VIVO</span></div>
+              </div>
+              <button onClick={onClose} className="text-slate-400 hover:text-white transition"><Icons.X /></button>
+            </div>
+            <div className="px-5 py-3 border-b bg-white flex flex-wrap gap-3 items-center">
+              <input type="text" placeholder="Filtrar usuário..." className="px-3 py-2 border rounded-lg text-xs flex-1 outline-none bg-slate-50" value={filtroUsuario} onChange={e => setFiltroUsuario(e.target.value)} />
+              <select className="border rounded-lg px-3 py-2 text-xs bg-white font-bold text-slate-600 outline-none" value={filtroAcao} onChange={e => setFiltroAcao(e.target.value)}><option value="Todos">Todos</option><option value="login">Entradas</option><option value="logout">Saídas</option></select>
+              <button onClick={exportarLogs} className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg hover:bg-green-100 transition"><Icons.Download /> Exportar</button>
+              {isAdminMaster && (
+                <button onClick={limparAuditoria} className="flex items-center gap-1.5 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg hover:bg-rose-600 hover:text-white transition"><Icons.Trash /> Limpar Tudo</button>
+              )}
+            </div>
+            <div className="overflow-y-auto custom-scrollbar flex-1">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-100 text-slate-500 text-[11px] font-bold uppercase sticky top-0 z-10"><tr><th className="px-5 py-3">Evento</th><th className="px-5 py-3">Usuário</th><th className="px-5 py-3">Perfil</th><th className="px-5 py-3">Data</th><th className="px-5 py-3">Hora</th></tr></thead>
+                <tbody className="divide-y divide-slate-100">
+                  {logsFiltrados.map(log => (
+                    <tr key={log.id} className={`${newIds.has(log.id) ? 'audit-row-new bg-yellow-50' : 'hover:bg-slate-50'}`}>
+                      <td className="px-5 py-3"><span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${log.acao==='login'?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-600'}`}>{log.acao==='login'?<Icons.LoginIn/>:<Icons.LoginOut/>} {log.acao.toUpperCase()}</span></td>
+                      <td className="px-5 py-3 font-semibold text-slate-700">{log.usuario}</td>
+                      <td className="px-5 py-3 uppercase text-[10px] font-bold text-slate-400">{log.role || 'viewer'}</td>
+                      <td className="px-5 py-3 text-slate-600 font-mono text-xs">{log.data}</td>
+                      <td className="px-5 py-3 text-slate-600 font-mono text-xs">{log.hora}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const CalculatorModal = ({ onClose }) => {
+        const [dataInicial, setDataInicial] = useState("");
+        const [dias, setDias] = useState("");
+        const [tipo, setTipo] = useState("uteis");
+        const [resultado, setResultado] = useState(null);
+        const [calcEstado, setCalcEstado] = useState("Pernambuco");
+        const [calcCidade, setCalcCidade] = useState("");
+
+        useEffect(() => { if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]); }, [calcEstado]);
+
+        const calcular = () => {
+            if (!dataInicial || !dias) return;
+            const dt = new Date(dataInicial); dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
+            let count = 0; const target = parseInt(dias);
+            while (count < target) { dt.setDate(dt.getDate() + 1); if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; } }
+            setResultado(dt.toLocaleDateString('pt-BR'));
+        };
+
+        return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8">
+                    <div className="flex justify-between items-start mb-6"><h3 className="text-blue-900 font-bold">Cálculo de Prazo</h3><button onClick={onClose} className="text-slate-400 hover:text-red-500"><Icons.X/></button></div>
+                    <div className="space-y-4">
+                        <select className="w-full p-2 border rounded" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option></select>
+                        <select className="w-full p-2 border rounded" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado]?.map(c => (<option key={c} value={c}>{c}</option>))}</select>
+                        <input type="date" className="w-full p-2 border rounded text-center" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
+                        <input type="number" className="w-full p-2 border rounded text-center" placeholder="Dias de prazo" value={dias} onChange={e=>setDias(e.target.value)}/>
+                        <div className="flex justify-center gap-8 py-2"><label className="flex gap-2"><input type="radio" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')}/> Úteis</label><label className="flex gap-2"><input type="radio" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')}/> Corridos</label></div>
+                        <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2 rounded">Calcular</button>
+                        {resultado && (<div className="bg-green-50 p-4 rounded text-center border mt-4"><p className="text-xs text-green-700 font-bold">PRAZO FINAL</p><p className="text-3xl font-extrabold text-green-800">{resultado}</p></div>)}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const FichaModal = ({ p, onClose }) => {
+        return (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 print:p-0">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 no-print"><Icons.X/></button>
+                    <div className="border-b-4 border-navy pb-4 mb-6"><h1 className="text-2xl font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold uppercase tracking-widest">Nascimento & Bomfim</p></div>
+                    <div className="space-y-6">
+                        <div className="bg-slate-50 p-4 rounded border"><h3 className="text-sm font-bold text-navy uppercase mb-2">Dados do Cliente</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><b>Nome:</b> {p.cliente}</div><div><b>CPF:</b> {p.cpf || '-'}</div><div><b>Tel:</b> {p.telefone || '-'}</div><div><b>Cidade:</b> {p.cidade}/{p.estado}</div></div></div>
+                        <div className="border p-4 rounded"><h3 className="text-sm font-bold text-navy uppercase mb-2">Processo</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><b>Número:</b> {p.numeroProcesso || 'S/N'}</div><div><b>Ramo:</b> {p.ramo}</div><div><b>Status:</b> {p.statusProcessual}</div><div><b>Responsável:</b> {p.advogado}</div></div></div>
+                    </div>
+                    <div className="mt-auto pt-8 text-center no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-2 rounded font-bold">IMPRIMIR PDF</button></div>
+                </div>
+            </div>
+        );
+    };
+
+    const LoginScreen = ({ onLogin }) => {
+      const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
+      const handle = async (e) => {
+        e.preventDefault();
+        try {
+            const doc = await db.collection(COL_USUARIOS).doc(user).get();
+            if (doc.exists && doc.data().senha === pass) {
+                await registrarAuditoria(user, 'login', doc.data().role || 'viewer');
+                onLogin(user, doc.data().role || 'viewer'); return;
+            }
+        } catch(e) {}
+        if (user === "NB ADVOCACIA" && pass === "NB07242530") { await registrarAuditoria(user, 'login', 'master'); onLogin(user, "master"); return; }
+        setError("Dados incorretos.");
+      };
+      return (
+        <div className="min-h-screen bg-navy flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8"><div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
+            <form onSubmit={handle} className="space-y-4">
+              <input className="w-full p-3 border rounded outline-none focus:border-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
+              <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
+              {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+              <button className="w-full bg-navy text-white py-3 rounded font-bold">ENTRAR</button>
+            </form>
+          </div>
+        </div>
+      );
     };
 
     const AppContent = () => {
       const [authOk, setAuthOk] = useState(false);
       const [user, setUser] = useState("");
       const [role, setRole] = useState("viewer");
-      const [aba, setAba] = useState('processos');
       const [processos, setProcessos] = useState([]);
-      const [logs, setLogs] = useState([]);
-      const [users, setUsers] = useState([]);
+      const [aba, setAba] = useState('processos');
       const [modal, setModal] = useState(false);
-      const [editId, setEditId] = useState(null);
-      const [form, setForm] = useState({ cliente: "", cpf: "", ramo: "Cível", advogado: "Evison Nascimento", parteContraria: "" });
-      const [usrForm, setUsrForm] = useState({ nome: "", senha: "", role: "viewer" });
+      const [fichaModal, setFichaModal] = useState(null);
+      const [calcModal, setCalcModal] = useState(false);
+      const [auditoriaModal, setAuditoriaModal] = useState(false);
+      const [editingId, setEditingId] = useState(null);
+      const [editingUserId, setEditingUserId] = useState(null);
+      const [listaUsuarios, setListaUsuarios] = useState([]);
+      const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
+      const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
 
-      const registrarLog = (acao, det) => {
-          if(!user) return;
-          db.collection(COL_AUDITORIA).add({ data: new Date().toISOString(), usuario: user, acao, detalhe: det });
-      };
+      const [formData, setFormData] = useState({ cliente: "", cpf: "", telefone: "", descricao: "", cidade: "", estado: "PE", ramo: "Cível", advogado: "Evison Nascimento", statusProcessual: "Em Andamento", valorContrato: "", statusPagamento: "Pendente" });
+
+      const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
+      const handleLogout = async () => { await registrarAuditoria(user, 'logout', role); window.location.reload(); };
 
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously();
-        const unsubP = db.collection(COL_PROCESSOS).onSnapshot(s => setProcessos(s.docs.map(d=>({id:d.id, ...d.data()}))));
-        return () => unsubP();
+        const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => { if (doc.exists) setListaEquipe(doc.data().nomes); });
+        if (role === 'master') db.collection(COL_USUARIOS).onSnapshot(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
-      useEffect(() => {
-        if (aba === 'equipe' && role === 'master') db.collection(COL_USUARIOS).onSnapshot(s => setUsers(s.docs.map(d=>({id:d.id, ...d.data()}))));
-        if (aba === 'auditoria') db.collection(COL_AUDITORIA).orderBy('data','desc').limit(100).onSnapshot(s => setLogs(s.docs.map(d=>({id:d.id, ...d.data()}))));
-      }, [aba]);
-
-      const login = async (e) => {
-        e.preventDefault();
-        const u = document.getElementById('li_u').value;
-        const p = document.getElementById('li_p').value;
-        if(u === "NB ADVOCACIA" && p === "NB07242530") { setUser(u); setRole("master"); setAuthOk(true); registrarLog("LOGIN", "Master entrou"); return; }
-        const doc = await db.collection(COL_USUARIOS).doc(u).get();
-        if(doc.exists && doc.data().senha === p) { setUser(u); setRole(doc.data().role); setAuthOk(true); registrarLog("LOGIN", `${u} entrou`); }
-        else alert("Acesso Negado");
+      const salvarUsuario = async () => {
+        if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo.");
+        try {
+          await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role });
+          alert("Usuário salvo!");
+          setNovoUsuario({nome: "", senha: "", role: "viewer"}); setEditingUserId(null);
+        } catch (e) { alert("Erro ao salvar."); }
       };
+
+      const editarUsuario = (u) => { setEditingUserId(u.id); setNovoUsuario({ nome: u.id, senha: u.senha, role: u.role || 'viewer' }); };
+      const excluirUsuario = async (id) => { if (confirm("Remover acesso?")) await db.collection(COL_USUARIOS).doc(id).delete(); };
 
       const salvarProcesso = async () => {
-        if(!form.cliente) return alert("Cliente obrigatório");
-        if(editId) await db.collection(COL_PROCESSOS).doc(editId).update(form);
-        else await db.collection(COL_PROCESSOS).add({...form, criadoEm: new Date().toISOString()});
-        registrarLog(editId ? "EDIÇÃO PROC" : "CRIAÇÃO PROC", form.cliente);
-        setModal(false); setEditId(null);
+          if (!formData.cliente) return alert("Nome obrigatório");
+          if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData);
+          else await db.collection(COL_PROCESSOS).add(formData);
+          setModal(false); setEditingId(null); setFormData({ cliente: "", cpf: "", telefone: "", descricao: "", cidade: "", estado: "PE", ramo: "Cível", advogado: "Evison Nascimento", statusProcessual: "Em Andamento", valorContrato: "", statusPagamento: "Pendente" });
       };
 
-      const salvarUsuario = async () => {
-        if(!usrForm.nome || !usrForm.senha) return alert("Preencha tudo");
-        await db.collection(COL_USUARIOS).doc(usrForm.nome).set({ senha: usrForm.senha, role: usrForm.role });
-        registrarLog("GESTÃO EQUIPE", `Modificou usuário: ${usrForm.nome}`);
-        setUsrForm({ nome: "", senha: "", role: "viewer" });
-        alert("Usuário atualizado com sucesso.");
-      };
-
-      if (!authOk) return (
-        <div className="min-h-screen bg-navy flex items-center justify-center p-4">
-          <form onSubmit={login} className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm space-y-4">
-            <div className="text-center mb-6"><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2><p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Gestão Jurídica</p></div>
-            <input id="li_u" className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-navy" placeholder="Usuário" required />
-            <input id="li_p" type="password" className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-navy" placeholder="Senha" required />
-            <button className="w-full bg-navy text-white py-3 rounded-lg font-bold hover:opacity-90 transition">ENTRAR</button>
-          </form>
-        </div>
-      );
+      if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
       return (
-        <div className="min-h-screen flex flex-col">
-          <header className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-            <div className="flex items-center gap-2"><Icons.Scale/><h1 className="font-bold text-navy">NB <span className="text-slate-400 font-normal">ADVOCACIA</span></h1></div>
-            <div className="flex gap-2">
-              <button onClick={()=>setAba('processos')} className={`px-4 py-1.5 rounded-lg text-sm font-bold ${aba==='processos'?'bg-navy text-white':'text-slate-500 bg-slate-50'}`}>Processos</button>
-              {role === 'master' && <button onClick={()=>setAba('auditoria')} className={`px-4 py-1.5 rounded-lg text-sm font-bold ${aba==='auditoria'?'bg-navy text-white':'text-slate-500 bg-slate-50'}`}>Auditoria</button>}
-              {role === 'master' && <button onClick={()=>setAba('equipe')} className={`px-4 py-1.5 rounded-lg text-sm font-bold ${aba==='equipe'?'bg-navy text-white':'text-slate-500 bg-slate-50'}`}>Equipe</button>}
-              {role !== 'viewer' && <button onClick={()=>{setEditId(null); setForm({cliente:"",ramo:"Cível",advogado:"Evison Nascimento",parteContraria:""}); setModal(true);}} className="bg-yellow-600 text-white px-4 py-1.5 rounded-lg font-bold shadow-md hover:bg-yellow-700 transition flex items-center gap-1"><Icons.Plus/> NOVO</button>}
-              <button onClick={()=>window.location.reload()} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Icons.LogOut/></button>
-            </div>
+        <div className="min-h-screen pb-20">
+          <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm no-print">
+             <div className="flex items-center gap-3"><div className="text-yellow-600"><Icons.Scale /></div><div><h1 className="text-xl font-bold text-navy">NB ADVOCACIA</h1><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{role}</span></div></div>
+             <div className="flex gap-2 items-center">
+                 <button onClick={()=>setAba('processos')} className={`px-4 py-2 rounded text-sm font-bold ${aba==='processos'?'bg-navy text-white':'bg-slate-100'}`}>Processos</button>
+                 {role === 'master' && (<button onClick={()=>setAba('equipe')} className={`px-4 py-2 rounded text-sm font-bold ${aba==='equipe'?'bg-navy text-white':'bg-slate-100'}`}>Equipe</button>)}
+                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 bg-slate-100 rounded text-sm"><Icons.Calculator/></button>
+                 {role === 'master' && (
+                   <button onClick={()=>setAuditoriaModal(true)} className="px-3 py-2 bg-purple-50 text-purple-700 rounded text-sm flex gap-2 font-bold"><Icons.Audit/> Auditoria</button>
+                 )}
+                 <button onClick={handleLogout} className="p-2 text-red-500 bg-red-50 rounded"><Icons.LogOut/></button>
+             </div>
           </header>
 
-          <main className="flex-1 max-w-7xl mx-auto w-full p-6">
-            {aba === 'processos' && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden fade-in">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 border-b text-slate-500 font-bold uppercase text-[10px]"><tr><th className="p-4">Cliente</th><th className="p-4">Ramo</th><th className="p-4 text-center">Ações</th></tr></thead>
-                  <tbody className="divide-y">
-                    {processos.map(p => (
-                      <tr key={p.id} className="hover:bg-slate-50 transition">
-                        <td className="p-4 font-bold text-slate-700">{p.cliente}</td>
-                        <td className="p-4 text-slate-500">{p.ramo}</td>
-                        <td className="p-4 flex justify-center gap-4">
-                          <button onClick={()=>{setEditId(p.id); setForm(p); setModal(true);}} className="text-blue-500"><Icons.Edit/></button>
-                          {role !== 'viewer' && <button onClick={async ()=>{if(confirm("Excluir?")){await db.collection(COL_PROCESSOS).doc(p.id).delete(); registrarLog("EXCLUSÃO PROC", p.cliente);}}} className="text-red-400"><Icons.Trash/></button>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <main className="max-w-7xl mx-auto px-6 py-8">
+             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
+             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
+             {auditoriaModal && <AuditoriaModal isAdminMaster={role==='master'} onClose={()=>setAuditoriaModal(false)} />}
 
-            {aba === 'auditoria' && role === 'master' && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden fade-in">
-                <div className="p-4 bg-slate-50 border-b flex justify-between items-center"><h3 className="font-bold text-slate-700 text-xs">LOGS DE ATIVIDADE</h3><button onClick={async ()=>{if(confirm("Limpar Auditoria?")){const b=db.batch(); logs.forEach(l=>b.delete(db.collection(COL_AUDITORIA).doc(l.id))); await b.commit();}}} className="text-red-500 text-[10px] font-bold underline">LIMPAR HISTÓRICO</button></div>
-                <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-xs text-left">
-                    <thead className="sticky top-0 bg-white border-b"><tr><th className="p-3">Data</th><th className="p-3">Usuário</th><th className="p-3">Ação</th><th className="p-3">Detalhe</th></tr></thead>
-                    <tbody className="divide-y">
-                      {logs.map(l => (<tr key={l.id}>
-                        <td className="p-3 text-slate-400">{new Date(l.data).toLocaleString()}</td>
-                        <td className="p-3 font-bold">{l.usuario}</td>
-                        <td className="p-3"><span className="bg-slate-100 px-2 py-0.5 rounded text-[10px] font-bold">{l.acao}</span></td>
-                        <td className="p-3 text-slate-600">{l.detalhe}</td>
-                      </tr>))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {aba === 'equipe' && role === 'master' && (
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 fade-in space-y-6">
-                <div className="bg-slate-50 p-4 rounded-xl space-y-3">
-                  <h3 className="font-bold text-slate-700 text-xs uppercase tracking-widest">Editar ou Novo Usuário</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <input className="p-2 border rounded-lg bg-white" placeholder="Login" value={usrForm.nome} onChange={e=>setUsrForm({...usrForm, nome:e.target.value})}/>
-                    <input className="p-2 border rounded-lg bg-white" placeholder="Nova Senha" value={usrForm.senha} onChange={e=>setUsrForm({...usrForm, senha:e.target.value})}/>
-                    <select className="p-2 border rounded-lg bg-white" value={usrForm.role} onChange={e=>setUsrForm({...usrForm, role:e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select>
-                    <button onClick={salvarUsuario} className="bg-navy text-white rounded-lg font-bold hover:opacity-90">SALVAR USUÁRIO</button>
-                  </div>
-                </div>
-                <div className="divide-y border rounded-xl overflow-hidden">
-                  {users.map(u => (
-                    <div key={u.id} className="p-4 flex justify-between items-center hover:bg-slate-50">
-                      <div><span className="font-bold text-slate-700">{u.id}</span><span className="ml-3 text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold uppercase">{u.role}</span><p className="text-xs text-slate-300 mt-1 font-mono">Senha: {u.senha}</p></div>
-                      <div className="flex gap-2">
-                        <button onClick={()=>setUsrForm({nome: u.id, senha: u.senha, role: u.role})} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"><Icons.Edit/></button>
-                        <button onClick={async ()=>{if(confirm("Excluir acesso?")) await db.collection(COL_USUARIOS).doc(u.id).delete();}} className="p-2 text-red-300 hover:text-red-500 rounded-lg"><Icons.Trash/></button>
-                      </div>
+             {aba === 'equipe' && role === 'master' && (
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border">
+                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Gestão de Acessos</h3>
+                        <div className="bg-slate-50 p-4 rounded-lg mb-6 space-y-3">
+                            <input className={`w-full p-2 border rounded ${editingUserId?'bg-slate-200':''}`} placeholder="Login do Usuário" disabled={!!editingUserId} value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
+                            <div className="flex gap-2">
+                                <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
+                                <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Viewer</option><option value="admin">Admin</option><option value="master">Master</option></select>
+                                <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">{editingUserId?'Atualizar':'Criar'}</button>
+                                {editingUserId && <button onClick={()=>{setEditingUserId(null); setNovoUsuario({nome:"",senha:"",role:"viewer"})}} className="p-2 bg-slate-300 rounded"><Icons.X/></button>}
+                            </div>
+                        </div>
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2 text-right">Ações</th></tr></thead>
+                            <tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b hover:bg-slate-50"><td className="p-2 font-bold">{u.id}</td><td className="p-2 text-slate-500 font-mono">{u.senha}</td><td className="p-2 uppercase text-[10px] font-bold text-navy">{u.role}</td><td className="p-2 text-right flex justify-end gap-2"><button onClick={()=>editarUsuario(u)} className="text-blue-500"><Icons.Edit/></button><button onClick={()=>excluirUsuario(u.id)} className="text-red-400"><Icons.Trash/></button></td></tr>))}</tbody>
+                        </table>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                 </div>
+             )}
+
+             {aba === 'processos' && (
+                 <div className="space-y-4 fade-in">
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-slate-800">Processos Cadastrados</h2>
+                        {role !== 'viewer' && (
+                            <button onClick={()=>{setEditingId(null); setModal(true)}} className="bg-yellow-600 text-white px-6 py-2 rounded font-bold shadow-lg hover:bg-yellow-700 flex gap-2"><Icons.Plus/> NOVO PROCESSO</button>
+                        )}
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 border-b text-slate-500 font-bold"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Processo</th><th className="px-4 py-3">Ramo</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3 text-center">Ações</th></tr></thead>
+                            <tbody className="divide-y">{processos.map(p => (
+                                <tr key={p.id} className="hover:bg-slate-50">
+                                    <td className="px-4 py-3 font-bold text-slate-700">{p.cliente}</td>
+                                    <td className="px-4 py-3 font-mono text-xs">{p.numeroProcesso || 'S/N'}</td>
+                                    <td className="px-4 py-3 text-slate-500">{p.ramo}</td>
+                                    <td className="px-4 py-3 font-medium">{p.advogado}</td>
+                                    <td className="px-4 py-3 flex justify-center gap-3">
+                                        <button onClick={()=>setFichaModal(p)} className="text-slate-400 hover:text-navy"><Icons.FileText/></button>
+                                        <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true)}} className="text-blue-400 hover:text-navy"><Icons.Edit/></button>
+                                        {role !== 'viewer' && <button onClick={async ()=>{if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(p.id).delete()}} className="text-red-200 hover:text-red-500"><Icons.Trash/></button>}
+                                    </td>
+                                </tr>
+                            ))}</tbody>
+                        </table>
+                    </div>
+                 </div>
+             )}
           </main>
 
           {modal && (
-            <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-              <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="bg-navy p-4 flex justify-between items-center text-white shrink-0"><h3 className="font-bold text-xs uppercase tracking-widest">{editId?"EDITAR":"NOVO"} PROCESSO</h3><button onClick={()=>setModal(false)}><Icons.X/></button></div>
-                <div className="p-6 overflow-y-auto custom-scrollbar space-y-4">
-                  <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Nome do Cliente</label><input className="w-full p-2 border rounded-lg font-bold" value={form.cliente} onChange={e=>setForm({...form, cliente: e.target.value})}/></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Ramo</label><select className="w-full p-2 border rounded-lg bg-white" value={form.ramo} onChange={e=>setForm({...form, ramo: e.target.value})}>{LISTA_RAMOS.map(r=><option key={r}>{r}</option>)}</select></div>
-                    <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Advogado</label><select className="w-full p-2 border rounded-lg bg-white" value={form.advogado} onChange={e=>setForm({...form, advogado: e.target.value})}>{LISTA_EQUIPE_PADRAO.map(n=><option key={n}>{n}</option>)}</select></div>
-                  </div>
-                  {form.ramo !== "Previdenciário" && (
-                    <div className="bg-red-50 p-4 rounded-xl border border-red-100 animate-scale-up">
-                      <label className="text-[10px] font-bold text-red-800 uppercase block mb-1">Parte Contrária</label>
-                      <input className="w-full p-2 border rounded-lg bg-white" placeholder="Nome do Réu" value={form.parteContraria} onChange={e=>setForm({...form, parteContraria: e.target.value})}/>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden">
+                    <div className="bg-navy p-4 flex justify-between items-center text-white"><h3 className="font-bold">CADASTRO DE PROCESSO</h3><button onClick={()=>setModal(false)}><Icons.X /></button></div>
+                    <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                        <input className="w-full p-2 border rounded font-bold" placeholder="Nome do Cliente" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/>
+                        <div className="grid grid-cols-2 gap-4">
+                            <input className="w-full p-2 border rounded" placeholder="Cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/>
+                            <select className="w-full p-2 border rounded" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
+                        </div>
+                        <input className="w-full p-2 border rounded font-mono" placeholder="Nº Processo" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/>
+                        <select className="w-full p-2 border rounded" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select>
+                        <textarea className="w-full p-2 border rounded h-24" placeholder="Descrição do caso" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea>
                     </div>
-                  )}
-                  {form.ramo === "Previdenciário" && (
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-2 animate-scale-up">
-                      <p className="text-[10px] font-bold text-blue-800 uppercase tracking-widest mb-1">Acesso GOV.BR</p>
-                      <input className="w-full p-2 border rounded-lg bg-white text-xs font-mono" placeholder="CPF/Login" value={form.govLogin} onChange={e=>setForm({...form, govLogin: e.target.value})}/>
-                      <input className="w-full p-2 border rounded-lg bg-white text-xs font-mono" placeholder="Senha GOV" value={form.govSenha} onChange={e=>setForm({...form, govSenha: e.target.value})}/>
-                    </div>
-                  )}
+                    <div className="p-4 bg-slate-50 border-t flex gap-2"><button onClick={()=>setModal(false)} className="flex-1 py-2 border rounded">Cancelar</button><button onClick={salvarProcesso} className="flex-1 py-2 bg-navy text-white font-bold rounded">Salvar</button></div>
                 </div>
-                <div className="p-4 border-t bg-slate-50 flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 border rounded-lg font-bold text-slate-500">CANCELAR</button><button onClick={salvarProcesso} className="flex-1 bg-navy text-white py-3 rounded-lg font-bold shadow-lg">SALVAR DADOS</button></div>
-              </div>
             </div>
           )}
         </div>
