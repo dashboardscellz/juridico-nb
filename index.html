@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v13.0</title>
+  <title>NB Advocacia - Gestão Jurídica v14.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -29,13 +29,13 @@
     
     .bg-navy { background-color: #0f172a; }
     
-    /* Scrollbar Fina e Elegante */
+    /* Scrollbar Fina */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Estilo de Impressão (Remove scroll e mostra tudo) */
+    /* Estilo de Impressão */
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
@@ -299,6 +299,20 @@
 
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
       const handleLogout = () => window.location.reload();
+
+      // FECHAR COM ESC
+      useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                setModal(false);
+                setCalcModal(false);
+                setFichaModal(null);
+                setModalSenha(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+      }, []);
 
       useEffect(() => {
         if (!authOk) return;
