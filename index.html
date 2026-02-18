@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v18.2 (Master + SP)</title>
+  <title>NB Advocacia - Gestão Jurídica v18.3 (Permissões Admin)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -84,7 +84,6 @@
         "São Paulo": ["São Paulo","Campinas","Guarulhos","São Bernardo do Campo","Santo André","Osasco","Sorocaba","Ribeirão Preto","São José dos Campos","Santos","Diadema","Jundiaí","Piracicaba","Bauru"]
     };
 
-    // Adicionado "SP" na lista de cadastro
     const LISTA_ESTADOS = ["PE", "PB", "SP"];
     const LISTA_RAMOS = ["Cível","Previdenciário","Trabalhista","Penal","Família e Sucessões","Consumidor","Administrativo","Tributário","Empresarial","Eleitoral","Ambiental","Digital","Imobiliário","Militar","Agrário","Outros"];
     const LISTA_EQUIPE_PADRAO = ["Evison Nascimento","Adiellyson Bomfim","Manassés Oliveira (Estagiário)","Bárbara Brenda (Estagiária)"];
@@ -296,6 +295,38 @@
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
     const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
 
+    // --- CALCULADORA ---
+    const CalculatorModal = ({ onClose }) => {
+        const [dataInicial, setDataInicial] = useState(""); const [dias, setDias] = useState(""); const [tipo, setTipo] = useState("uteis"); const [resultado, setResultado] = useState(null); const [calcEstado, setCalcEstado] = useState("Pernambuco"); const [calcCidade, setCalcCidade] = useState("");
+        useEffect(() => { if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]); }, [calcEstado]);
+        const calcular = () => {
+            if (!dataInicial || !dias) return;
+            const dt = new Date(dataInicial); dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
+            let count = 0; const target = parseInt(dias);
+            while (count < target) { dt.setDate(dt.getDate() + 1); if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; } }
+            setResultado(dt.toLocaleDateString('pt-BR'));
+        };
+        return (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-start mb-6"><div className="w-full"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3><div className="border-b border-blue-100 w-1/2 mx-auto"></div></div><button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button></div>
+                    <div className="space-y-3">
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option><option value="São Paulo">São Paulo</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (<option key={cidade} value={cidade}>{cidade}</option>))}</select>
+                    </div>
+                    <div className="mt-6 mb-2"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira a data da publicação</h3><div className="border-b border-blue-100 w-1/2 mx-auto mb-4"></div></div>
+                    <div className="space-y-4">
+                        <input type="date" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
+                        <input type="number" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" placeholder="Prazo em dias" value={dias} onChange={e=>setDias(e.target.value)}/>
+                    </div>
+                    <div className="flex justify-center gap-8 py-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label></div>
+                    <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow hover:bg-orange-700 transition duration-200">Calcular</button>
+                    {resultado && (<div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4"><p className="text-xs text-green-700 font-bold uppercase tracking-widest">Prazo Final</p><p className="text-3xl font-extrabold text-green-800 mt-1">{resultado}</p></div>)}
+                </div>
+            </div>
+        );
+    };
+
     const LoginScreen = ({ onLogin }) => {
       const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
       const handle = async (e) => {
@@ -336,6 +367,7 @@
       const [aba, setAba] = useState('dashboard');
       const [modal, setModal] = useState(false);
       const [fichaModal, setFichaModal] = useState(null);
+      const [calcModal, setCalcModal] = useState(false);
       const [auditoriaModal, setAuditoriaModal] = useState(false);
       const [editingId, setEditingId] = useState(null);
       const [modalSenha, setModalSenha] = useState(false);
@@ -365,7 +397,7 @@
       const handleLogout = async () => { try { await registrarAuditoria(user, 'logout', role); } catch(e) {} window.location.reload(); };
 
       useEffect(() => {
-        const handleEsc = (e) => { if (e.key === 'Escape') { setModal(false); setFichaModal(null); setModalSenha(false); setAuditoriaModal(false); } };
+        const handleEsc = (e) => { if (e.key === 'Escape') { setModal(false); setCalcModal(false); setFichaModal(null); setModalSenha(false); setAuditoriaModal(false); } };
         window.addEventListener('keydown', handleEsc); return () => window.removeEventListener('keydown', handleEsc);
       }, []);
 
@@ -380,9 +412,9 @@
         return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
-      // Carregar usuários para Master
+      // Carregar usuários para Master e Admin
       useEffect(() => {
-        if (aba === 'equipe' && role === 'master') {
+        if (aba === 'equipe' && (role === 'master' || role === 'admin')) {
             const unsubUsers = db.collection(COL_USUARIOS).onSnapshot(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
             return () => unsubUsers();
         }
@@ -432,12 +464,13 @@
              <div className="flex gap-2 items-center flex-wrap">
                  <button onClick={()=>setAba('dashboard')} className={`hidden md:flex px-3 py-2 rounded text-sm font-bold items-center gap-2 border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
                  <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='processos'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>Processos</button>
+                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Calculator/> Calc</button>
                  
-                 {role === 'master' && (
+                 {(role === 'master' || role === 'admin') && (
                    <button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>
                  )}
 
-                 {role === 'master' && (
+                 {(role === 'master' || role === 'admin') && (
                    <button onClick={() => setAuditoriaModal(true)} className="px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition relative">
                      <Icons.Audit /> Auditoria <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white pulse-green"></span>
                    </button>
@@ -454,6 +487,7 @@
           </header>
 
           <main className="max-w-7xl mx-auto px-6 py-8">
+             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
              {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
              {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
 
@@ -472,34 +506,44 @@
                  </div>
              )}
 
-             {/* EQUIPE (MASTER ONLY) */}
-             {aba === 'equipe' && role === 'master' && (
+             {/* EQUIPE (MASTER & ADMIN - VISUALIZAÇÃO) */}
+             {aba === 'equipe' && (role === 'master' || role === 'admin') && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
                     {/* GESTÃO DE ACESSOS (LOGIN) */}
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3>
-                        <div className="bg-slate-50 p-4 rounded border mb-4 space-y-2">
-                            <input 
-                                className={`w-full p-2 border rounded ${editingUser ? 'bg-slate-200' : ''}`} 
-                                placeholder="Nome (Login)" 
-                                disabled={!!editingUser}
-                                value={novoUsuario.nome} 
-                                onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}
-                            />
-                            <div className="flex gap-2">
-                                <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
-                                <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
-                                    <option value="viewer">Visualizador</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="master">Master</option>
-                                </select>
-                                <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">{editingUser ? 'Atualizar' : 'Salvar'}</button>
-                                {editingUser && <button onClick={()=>{setEditingUser(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="bg-slate-400 text-white px-3 rounded">X</button>}
+                        
+                        {/* FORMULÁRIO DE EDIÇÃO - APENAS MASTER */}
+                        {role === 'master' && (
+                            <div className="bg-slate-50 p-4 rounded border mb-4 space-y-2">
+                                <input 
+                                    className={`w-full p-2 border rounded ${editingUser ? 'bg-slate-200' : ''}`} 
+                                    placeholder="Nome (Login)" 
+                                    disabled={!!editingUser}
+                                    value={novoUsuario.nome} 
+                                    onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}
+                                />
+                                <div className="flex gap-2">
+                                    <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
+                                    <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
+                                        <option value="viewer">Visualizador</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="master">Master</option>
+                                    </select>
+                                    <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">{editingUser ? 'Atualizar' : 'Salvar'}</button>
+                                    {editingUser && <button onClick={()=>{setEditingUser(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="bg-slate-400 text-white px-3 rounded">X</button>}
+                                </div>
                             </div>
-                        </div>
+                        )}
+
                         <table className="w-full text-sm text-left">
                             <thead className="bg-slate-100 border-b">
-                                <tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2 text-right">Ações</th></tr>
+                                <tr>
+                                    <th className="p-2">Usuário</th>
+                                    <th className="p-2">Senha</th>
+                                    <th className="p-2">Role</th>
+                                    {role === 'master' && <th className="p-2 text-right">Ações</th>}
+                                </tr>
                             </thead>
                             <tbody>
                                 {listaUsuarios.map(u => (
@@ -507,10 +551,12 @@
                                         <td className="p-2 font-bold">{u.id}</td>
                                         <td className="p-2 font-mono text-slate-500">{u.senha}</td>
                                         <td className="p-2 uppercase text-[10px] font-bold text-navy">{u.role}</td>
-                                        <td className="p-2 text-right flex justify-end gap-2">
-                                            <button onClick={()=>prepararEdicaoUsuario(u)} className="text-blue-500"><Icons.Edit/></button>
-                                            <button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button>
-                                        </td>
+                                        {role === 'master' && (
+                                            <td className="p-2 text-right flex justify-end gap-2">
+                                                <button onClick={()=>prepararEdicaoUsuario(u)} className="text-blue-500"><Icons.Edit/></button>
+                                                <button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -520,15 +566,22 @@
                     {/* CORPO JURÍDICO (DROPDOWN LIST) */}
                     <div className="bg-white rounded-xl shadow-sm p-6">
                         <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico (Dropdown)</h3>
-                        <div className="flex gap-2 mb-4">
-                            <input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
-                            <button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button>
-                        </div>
+                        
+                        {/* ADICIONAR MEMBRO - APENAS MASTER */}
+                        {role === 'master' && (
+                            <div className="flex gap-2 mb-4">
+                                <input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
+                                <button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button>
+                            </div>
+                        )}
+
                         <ul className="divide-y border rounded">
                             {listaEquipe.map((nome, i) => (
                                 <li key={i} className="p-3 flex justify-between items-center bg-slate-50">
                                     <span className="font-bold text-slate-700">{nome}</span>
-                                    <button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button>
+                                    {role === 'master' && (
+                                        <button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -604,26 +657,4 @@
                                     <h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
-                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
-                                    </div>
-                                </div>
-                            )}
-                            {formData.ramo === 'Previdenciário' ? (<div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div></div></div>) : (<div className="grid grid-cols-2 gap-3"><div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span></div>{!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}</div>)}
-                            <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div><div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div></div>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200"><div className="flex items-center gap-2 mb-2"><span className="text-xs font-bold text-slate-600 uppercase">Anexos (Links Nuvem)</span></div><div className="space-y-2"><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.procuracaoEntregue} onChange={e=>setFormData({...formData, procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Procuração</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/></div><div><div className="flex items-center gap-2 mb-1"><input type="checkbox" checked={formData.contratoEntregue} onChange={e=>setFormData({...formData, contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-slate-500">Contrato</span></div><input className="w-full p-2 border rounded text-xs bg-white text-blue-600 underline" placeholder="Cole o link..." value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/></div></div></div>
-                        <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100"><h4 className="text-xs font-bold text-orange-800 uppercase mb-2">Honorários</h4><div className="grid grid-cols-2 gap-3 mb-2"><div><label className="text-[10px] font-bold text-slate-400">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoPagamento} onChange={e=>setFormData({...formData, tipoPagamento: e.target.value})}><option>Valor Cheio</option><option>Parcelado</option><option>Êxito</option></select></div><div><label className="text-[10px] font-bold text-slate-400">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option></select></div></div>{formData.tipoPagamento === 'Parcelado' ? (<div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400">Qtd</label><input type="number" className="w-full p-2 border rounded text-sm" value={formData.qtdParcelas} onChange={e=>setFormData({...formData, qtdParcelas: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-400">Valor Parc.</label><input className="w-full p-2 border rounded text-sm" placeholder="R$" value={formData.valorParcela} onChange={e=>setFormData({...formData, valorParcela: e.target.value})}/></div></div>) : (<div><label className="text-[10px] font-bold text-slate-400">Valor Total</label><input className="w-full p-2 border rounded text-sm font-bold" placeholder="R$ 0,00" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/></div>)}</div>
-                    </div>
-                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 rounded-lg border text-slate-500 font-bold hover:bg-slate-100 transition">CANCELAR</button><button onClick={salvar} className="flex-[2] py-3 rounded-lg bg-navy text-white font-bold hover:bg-slate-800 shadow transition flex items-center justify-center gap-2"><Icons.Check/> SALVAR</button></div>
-                </div>
-            </div>
-          )}
-        </div>
-      );
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<AppContent />);
-  </script>
-</body>
-</html>
+                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica
