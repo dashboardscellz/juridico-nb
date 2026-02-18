@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Premium v19.0</title>
+  <title>NB Advocacia - Gestão Jurídica v19.1 (Visual Fix)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -29,15 +29,8 @@
             serif: ['Playfair Display', 'serif'],
           },
           colors: {
-            navy: {
-              800: '#1e293b',
-              900: '#0f172a',
-            },
-            gold: {
-              400: '#fbbf24',
-              500: '#f59e0b',
-              600: '#d97706',
-            }
+            navy: { 800: '#1e293b', 900: '#0f172a' },
+            gold: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' }
           }
         }
       }
@@ -47,38 +40,20 @@
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; color: #334155; }
     .font-serif { font-family: 'Playfair Display', serif; }
-    
     .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .glass-header {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-
-    /* Scrollbar elegante */
+    .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
     @keyframes pulse-green { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
     .pulse-green { animation: pulse-green 2s infinite; }
-
     .audit-row-new { animation: slideInRow 0.5s ease-out; background-color: #fffbeb !important; }
     @keyframes slideInRow { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
-    /* Efeitos de Hover nos Cards */
     .hover-card { transition: all 0.3s ease; }
     .hover-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); }
-
-    @media print {
-      body * { visibility: hidden; }
-      #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; padding: 0; background: white; box-shadow: none; }
-      .no-print { display: none !important; }
-    }
+    @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; padding: 0; background: white; box-shadow: none; } .no-print { display: none !important; } }
   </style>
 </head>
 <body>
@@ -538,11 +513,11 @@
       return (
         <div className="min-h-screen pb-24 fade-in bg-[#f8fafc]">
           {/* HEADER PREMIUM */}
-          <header className="glass-header sticky top-0 z-40 px-8 py-4 flex justify-between items-center transition-all">
+          <header className="glass-header sticky top-0 z-40 px-4 md:px-8 py-4 flex justify-between items-center transition-all">
              <div className="flex items-center gap-4">
                  <div className="text-gold-500 bg-navy-900 p-2 rounded-lg shadow-lg"><div className="w-6 h-6"><Icons.Scale /></div></div>
-                 <div>
-                    <h1 className="text-2xl font-serif font-bold text-navy-900 tracking-tight leading-none">NB ADVOCACIA</h1>
+                 <div className="hidden md:block">
+                    <h1 className="text-xl md:text-2xl font-serif font-bold text-navy-900 tracking-tight leading-none">NB ADVOCACIA</h1>
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold text-gold-600 uppercase tracking-[0.2em]">Gestão Jurídica</span>
                         <span className="text-[10px] text-slate-300">•</span>
@@ -551,35 +526,35 @@
                  </div>
              </div>
              
-             <div className="flex gap-3 items-center">
+             <div className="flex gap-2 md:gap-3 items-center">
                  <nav className="hidden md:flex bg-slate-100 p-1 rounded-xl mr-2">
                     <button onClick={()=>setAba('dashboard')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='dashboard'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}><Icons.Chart/> Dashboard</button>
                     <button onClick={()=>setAba('processos')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='processos'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Processos</button>
                     {(role === 'master' || role === 'admin') && <button onClick={()=>setAba('equipe')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${aba==='equipe'?'bg-white text-navy-900 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Equipe</button>}
                  </nav>
 
-                 <div className="h-8 w-px bg-slate-200 mx-1"></div>
+                 <div className="hidden md:block h-8 w-px bg-slate-200 mx-1"></div>
 
-                 <button onClick={()=>setCalcModal(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Calculadora"><div className="w-5 h-5"><Icons.Calculator/></div></button>
+                 <button onClick={()=>setCalcModal(true)} className="p-2 md:p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Calculadora"><div className="w-5 h-5"><Icons.Calculator/></div></button>
                  
                  {(role === 'master' || role === 'admin') && (
-                   <button onClick={() => setAuditoriaModal(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-purple-50 hover:text-purple-700 transition border border-transparent hover:border-purple-100 relative group" title="Auditoria">
+                   <button onClick={() => setAuditoriaModal(true)} className="p-2 md:p-2.5 rounded-xl text-slate-500 hover:bg-purple-50 hover:text-purple-700 transition border border-transparent hover:border-purple-100 relative group" title="Auditoria">
                      <div className="w-5 h-5"><Icons.Audit /></div>
                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-green-500 border-2 border-white pulse-green"></span>
                    </button>
                  )}
                  
-                 <button onClick={()=>setModalSenha(true)} className="p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Alterar Senha"><div className="w-5 h-5"><Icons.Key/></div></button>
+                 <button onClick={()=>setModalSenha(true)} className="p-2 md:p-2.5 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-navy-900 transition border border-transparent hover:border-slate-200" title="Alterar Senha"><div className="w-5 h-5"><Icons.Key/></div></button>
                  
                  {(role !== 'viewer') && (
-                   <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-gradient-to-r from-gold-500 to-gold-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:shadow-lg hover:shadow-gold-500/30 hover:-translate-y-0.5 transition flex items-center gap-2 ml-2"><Icons.Plus/> NOVO PROCESSO</button>
+                   <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-gradient-to-r from-gold-500 to-gold-600 text-white px-3 md:px-5 py-2.5 rounded-xl text-xs font-bold hover:shadow-lg hover:shadow-gold-500/30 hover:-translate-y-0.5 transition flex items-center gap-2 ml-2"><Icons.Plus/> <span className="hidden md:inline">NOVO PROCESSO</span></button>
                  )}
                  
-                 <button onClick={handleLogout} className="ml-2 p-2.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition border border-transparent hover:border-red-100" title="Sair"><div className="w-5 h-5"><Icons.LogOut/></div></button>
+                 <button onClick={handleLogout} className="ml-2 p-2 md:p-2.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition border border-transparent hover:border-red-100" title="Sair"><div className="w-5 h-5"><Icons.LogOut/></div></button>
              </div>
           </header>
 
-          <main className="max-w-7xl mx-auto px-8 py-10">
+          <main className="max-w-7xl mx-auto px-4 md:px-8 py-10">
              {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
              {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
              {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
@@ -793,34 +768,37 @@
           {modal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/60 backdrop-blur-sm p-4 fade-in">
                 <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                    <div className="bg-white border-b border-slate-100 px-8 py-5 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-3 text-navy-900">
-                            <div className="bg-gold-100 text-gold-600 p-2 rounded-lg"><Icons.Scale /></div>
+                    <div className="bg-white border-b border-slate-100 px-5 md:px-8 py-5 flex justify-between items-center shrink-0">
+                        <div className="flex items-center gap-4 text-navy-900">
+                            {/* AQUI ESTÁ A CORREÇÃO PRINCIPAL: Tamanho fixo (w-12 h-12) e centralização */}
+                            <div className="bg-gold-100 text-gold-600 p-2.5 rounded-xl w-12 h-12 shrink-0 flex items-center justify-center shadow-sm">
+                                <Icons.Scale />
+                            </div>
                             <div>
-                                <h3 className="text-lg font-serif font-bold tracking-wide">{editingId ? 'Editar Processo' : 'Novo Processo'}</h3>
+                                <h3 className="text-lg font-serif font-bold tracking-wide leading-tight">{editingId ? 'Editar Processo' : 'Novo Processo'}</h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Ficha Cadastral</p>
                             </div>
                         </div>
                         <button onClick={()=>setModal(false)} className="text-slate-400 hover:text-red-500 transition bg-slate-50 hover:bg-red-50 p-2 rounded-lg"><Icons.X /></button>
                     </div>
                     
-                    <div className="p-8 overflow-y-auto custom-scrollbar space-y-8 bg-[#fdfdfd]">
+                    <div className="p-5 md:p-8 overflow-y-auto custom-scrollbar space-y-6 md:space-y-8 bg-[#fdfdfd]">
                         {/* SEÇÃO 1: CLIENTE */}
                         <div className="space-y-4">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4">Dados do Cliente</h4>
                             <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Nome Completo</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white font-medium text-slate-700 outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition shadow-sm" placeholder="Ex: João da Silva" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/></div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">CPF</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm font-mono text-sm" placeholder="000.000.000-00" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/></div>
                                 <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Telefone</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm font-mono text-sm" placeholder="(00) 00000-0000" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/></div>
                             </div>
                             <div className="grid grid-cols-12 gap-4">
-                                <div className="col-span-4"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Estado (UF)</label><select className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm appearance-none" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div>
-                                <div className="col-span-8"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Cidade</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Recife, João Pessoa..." value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div>
+                                <div className="col-span-12 md:col-span-4"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Estado (UF)</label><select className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm appearance-none" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(uf => <option key={uf}>{uf}</option>)}</select></div>
+                                <div className="col-span-12 md:col-span-8"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Cidade</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Recife, João Pessoa..." value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/></div>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-span-2"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Endereço</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Rua, Avenida..." value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Endereço</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" placeholder="Rua, Avenida..." value={formData.rua} onChange={e=>setFormData({...formData, rua: e.target.value})}/></div>
                                 <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Número</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" value={formData.numero} onChange={e=>setFormData({...formData, numero: e.target.value})}/></div>
-                                <div className="col-span-3"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Bairro</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div>
+                                <div className="md:col-span-3"><label className="text-xs font-bold text-navy-900 mb-1.5 block">Bairro</label><input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-navy-900 transition shadow-sm text-sm" value={formData.bairro} onChange={e=>setFormData({...formData, bairro: e.target.value})}/></div>
                             </div>
                             <div><label className="text-xs font-bold text-navy-900 mb-1.5 block">Resumo do Caso</label><textarea className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 text-sm h-24 resize-none outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition shadow-sm" placeholder="Descreva brevemente a demanda..." value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea></div>
                         </div>
@@ -829,14 +807,14 @@
                         <div className="space-y-4">
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-4 mt-2">Dados Processuais</h4>
                             <div className="bg-navy-50/50 p-5 rounded-xl border border-navy-100">
-                                <div className="flex items-center gap-4 mb-4">
+                                <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4 mb-4">
                                     <label className="text-xs font-bold text-navy-900 uppercase tracking-wider block">Área de Atuação:</label>
-                                    <select className="px-3 py-1.5 border border-navy-200 rounded-lg text-sm font-bold text-navy-900 bg-white outline-none focus:border-gold-500" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
+                                    <select className="w-full md:w-auto px-3 py-1.5 border border-navy-200 rounded-lg text-sm font-bold text-navy-900 bg-white outline-none focus:border-gold-500" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
                                 </div>
                                 {formData.ramo !== 'Previdenciário' && (
                                     <div className="mb-4">
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte Contrária</label><input className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm" placeholder="Nome da Parte / Empresa" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte Contrária</label><input className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm" placeholder="Nome da Parte / Empresa" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
                                             <div><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Tipo</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm outline-none" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
                                         </div>
                                     </div>
@@ -844,8 +822,8 @@
                                 {formData.ramo === 'Previdenciário' ? (
                                     <div className="bg-white p-4 rounded-xl border border-blue-100 space-y-3 shadow-sm">
                                         <div className="flex items-center gap-2 mb-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-xs font-bold text-blue-700 uppercase">Detalhes INSS</span></div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Patologia / Benefício</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Patologia / Benefício</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div>
                                             <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Login GOV</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm font-mono focus:bg-white transition" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div>
                                             <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Senha GOV</label><input className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm font-mono focus:bg-white transition" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div>
                                             <div><label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Data Perícia</label><input type="datetime-local" className="w-full p-2 border border-slate-200 rounded bg-slate-50 text-sm focus:bg-white transition" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div>
@@ -853,17 +831,17 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="col-span-2 bg-white p-3 rounded-lg border border-slate-200 flex items-center gap-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2 bg-white p-3 rounded-lg border border-slate-200 flex items-center gap-3">
                                             <input type="checkbox" className="w-4 h-4 accent-navy-900" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-sm text-slate-600 font-medium">Ainda não possui nº de processo (Pré-processual)</span>
                                         </div>
-                                        {!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Nº Processo</label><input className="w-full p-3 border border-slate-200 rounded-lg bg-white font-mono text-sm focus:border-navy-900 outline-none" placeholder="0000000-00.0000.0.00.0000" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}
+                                        {!formData.semProcesso && <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Nº Processo</label><input className="w-full p-3 border border-slate-200 rounded-lg bg-white font-mono text-sm focus:border-navy-900 outline-none" placeholder="0000000-00.0000.0.00.0000" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}
                                     </div>
                                 )}
-                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                     <div><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Advogado Responsável</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm outline-none" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div>
                                     <div><label className="text-[10px] font-bold text-red-500 uppercase mb-1 block">Prazo Fatal</label><input type="date" className="w-full p-2.5 border border-red-100 rounded-lg bg-red-50/50 text-sm text-red-700 font-medium outline-none focus:border-red-300" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div>
-                                    <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Status Processual</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm font-medium text-navy-900 outline-none" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div>
+                                    <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Status Processual</label><select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm font-medium text-navy-900 outline-none" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div>
                                 </div>
                             </div>
                         </div>
