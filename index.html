@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v17.0</title>
+  <title>NB Advocacia - Gestão Jurídica v18.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -62,7 +62,7 @@
     const COL_PROCESSOS = 'gestao_processos_nb';
     const COL_USUARIOS = 'credenciais_advocacia';
     const COL_PROFISSIONAIS = 'equipe_nomes_nb';
-    const COL_AUDITORIA = 'auditoria_processos_nb'; // Nova coleção de auditoria
+    const COL_AUDITORIA = 'auditoria_processos_nb';
 
     // --- DADOS ---
     const DADOS_ESTADOS = {
@@ -94,6 +94,7 @@
       History: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
     };
 
+    // --- COMPONENTES AUXILIARES ---
     const ChartComponent = ({ type, data, options }) => {
         const canvasRef = useRef(null); const chartRef = useRef(null);
         useEffect(() => {
@@ -141,10 +142,12 @@
         );
     };
 
+    // --- UTILS ---
     const formatCPF = (v) => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
     const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
 
+    // --- CALCULADORA (AJUSTADA: SCROLL INTERNO) ---
     const CalculatorModal = ({ onClose }) => {
         const [dataInicial, setDataInicial] = useState("");
         const [dias, setDias] = useState("");
@@ -158,7 +161,8 @@
 
         const calcular = () => {
             if (!dataInicial || !dias) return;
-            const dt = new Date(dataInicial); dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
+            const dt = new Date(dataInicial);
+            dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
             let count = 0; const target = parseInt(dias);
             while (count < target) {
                 dt.setDate(dt.getDate() + 1);
@@ -188,6 +192,7 @@
         );
     };
 
+    // --- LOGIN ---
     const LoginScreen = ({ onLogin }) => {
       const [user, setUser] = useState("");
       const [pass, setPass] = useState("");
@@ -218,12 +223,13 @@
       );
     };
 
+    // --- APP ---
     const AppContent = () => {
       const [authOk, setAuthOk] = useState(false);
       const [user, setUser] = useState("");
       const [role, setRole] = useState("viewer");
       const [processos, setProcessos] = useState([]);
-      const [logs, setLogs] = useState([]); // LOGS STATE
+      const [logs, setLogs] = useState([]);
       const [busca, setBusca] = useState("");
       const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
       const [aba, setAba] = useState('dashboard');
@@ -267,7 +273,6 @@
 
       const handleLogin = (u, r) => { 
           setUser(u); setRole(r); setAuthOk(true); 
-          // Log manual call since user state might not be ready in registrarLog
           if(db) db.collection(COL_AUDITORIA).add({ data: new Date().toISOString(), usuario: u, acao: "LOGIN", detalhe: "Entrou no sistema" });
       };
       
@@ -285,17 +290,14 @@
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously();
-        
         const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
         const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => {
             if (doc.exists && doc.data().nomes) setListaEquipe(doc.data().nomes);
             else db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: LISTA_EQUIPE_PADRAO });
         });
-        
         return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
-      // AUDIT SUBSCRIPTION
       useEffect(() => {
           if (!authOk || aba !== 'auditoria') return;
           const unsubAudit = db.collection(COL_AUDITORIA).orderBy('data', 'desc').limit(50).onSnapshot(snap => {
@@ -342,6 +344,11 @@
           await db.collection(COL_USUARIOS).doc(id).delete(); 
           registrarLog("GESTÃO USUÁRIO", `Excluiu usuário: ${id}`);
           const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); 
+      };
+
+      // NOVA FUNÇÃO DE EDITAR USUÁRIO
+      const carregarUsuarioParaEdicao = (u) => {
+          setNovoUsuario({ nome: u.id, senha: u.senha, role: u.role });
       };
       
       const salvar = async () => { 
@@ -424,7 +431,7 @@
                  </div>
              )}
 
-             {/* ABA AUDITORIA (NOVA) */}
+             {/* ABA AUDITORIA */}
              {aba === 'auditoria' && (
                  <div className="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
                      <div className="p-4 border-b bg-slate-50 flex justify-between items-center">
@@ -451,7 +458,38 @@
              {/* EQUIPE (MASTER) */}
              {aba === 'equipe' && role === 'master' && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3><div className="bg-slate-50 p-4 rounded border mb-4 space-y-2"><input className="w-full p-2 border rounded" placeholder="Nome (Login)" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/><div className="flex gap-2"><input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/><select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select><button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button></div></div><table className="w-full text-sm text-left"><thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead><tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>))}</tbody></table></div>
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3>
+                        <div className="bg-slate-50 p-4 rounded border mb-4 space-y-2">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Editar / Novo Login</h4>
+                            <div className="space-y-2">
+                                <input className="w-full p-2 border rounded" placeholder="Nome (Login)" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
+                                <div className="flex gap-2">
+                                    <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
+                                    <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
+                                        <option value="viewer">Visualizador</option><option value="admin">Admin</option>
+                                    </select>
+                                    <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2 text-right">Ação</th></tr></thead>
+                            <tbody>
+                                {listaUsuarios.map(u => (
+                                    <tr key={u.id} className="border-b">
+                                        <td className="p-2 font-bold">{u.id}</td>
+                                        <td className="p-2 font-mono text-slate-500">{u.senha}</td>
+                                        <td className="p-2 uppercase text-xs">{u.role}</td>
+                                        <td className="p-2 text-right">
+                                            <button onClick={()=>carregarUsuarioParaEdicao(u)} className="text-blue-500 mr-2 hover:text-navy" title="Editar"><Icons.Edit/></button>
+                                            <button onClick={()=>excluirUsuario(u.id)} className="text-red-500 hover:text-red-700" title="Excluir"><Icons.Trash/></button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                     <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico</h3><div className="flex gap-2 mb-4"><input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/><button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button></div><ul className="divide-y border rounded">{listaEquipe.map((nome, i) => (<li key={i} className="p-3 flex justify-between items-center bg-slate-50"><span className="font-bold text-slate-700">{nome}</span><button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button></li>))}</ul></div>
                  </div>
              )}
