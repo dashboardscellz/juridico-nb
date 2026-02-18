@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v18.3 (Permissões Admin)</title>
+  <title>NB Advocacia - Gestão Jurídica v18.4 (Fixed)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -129,6 +129,11 @@
       Download: () => (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+      ),
+      Calculator: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
         </svg>
       ),
     };
@@ -297,29 +302,53 @@
 
     // --- CALCULADORA ---
     const CalculatorModal = ({ onClose }) => {
-        const [dataInicial, setDataInicial] = useState(""); const [dias, setDias] = useState(""); const [tipo, setTipo] = useState("uteis"); const [resultado, setResultado] = useState(null); const [calcEstado, setCalcEstado] = useState("Pernambuco"); const [calcCidade, setCalcCidade] = useState("");
-        useEffect(() => { if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]); }, [calcEstado]);
+        const [dataInicial, setDataInicial] = useState("");
+        const [dias, setDias] = useState("");
+        const [tipo, setTipo] = useState("uteis");
+        const [resultado, setResultado] = useState(null);
+        const [calcEstado, setCalcEstado] = useState("Pernambuco");
+        const [calcCidade, setCalcCidade] = useState("");
+        const [tipoProcesso, setTipoProcesso] = useState("Eletrônico");
+
+        useEffect(() => {
+            if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]);
+        }, [calcEstado]);
+
         const calcular = () => {
             if (!dataInicial || !dias) return;
-            const dt = new Date(dataInicial); dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
+            const dt = new Date(dataInicial);
+            dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
             let count = 0; const target = parseInt(dias);
-            while (count < target) { dt.setDate(dt.getDate() + 1); if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; } }
+            while (count < target) {
+                dt.setDate(dt.getDate() + 1);
+                if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; }
+            }
             setResultado(dt.toLocaleDateString('pt-BR'));
         };
+
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
                 <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-start mb-6"><div className="w-full"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3><div className="border-b border-blue-100 w-1/2 mx-auto"></div></div><button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button></div>
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="w-full"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3><div className="border-b border-blue-100 w-1/2 mx-auto"></div></div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button>
+                    </div>
                     <div className="space-y-3">
                         <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option><option value="São Paulo">São Paulo</option></select>
                         <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (<option key={cidade} value={cidade}>{cidade}</option>))}</select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={tipoProcesso} onChange={e=>setTipoProcesso(e.target.value)}><option>Eletrônico</option><option>Físico</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option><option>TJPB</option></select>
                     </div>
                     <div className="mt-6 mb-2"><h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira a data da publicação</h3><div className="border-b border-blue-100 w-1/2 mx-auto mb-4"></div></div>
                     <div className="space-y-4">
                         <input type="date" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
                         <input type="number" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" placeholder="Prazo em dias" value={dias} onChange={e=>setDias(e.target.value)}/>
                     </div>
-                    <div className="flex justify-center gap-8 py-4"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label></div>
+                    <div className="flex justify-center gap-8 py-4">
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label>
+                    </div>
                     <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow hover:bg-orange-700 transition duration-200">Calcular</button>
                     {resultado && (<div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4"><p className="text-xs text-green-700 font-bold uppercase tracking-widest">Prazo Final</p><p className="text-3xl font-extrabold text-green-800 mt-1">{resultado}</p></div>)}
                 </div>
@@ -327,20 +356,31 @@
         );
     };
 
+    // --- LOGIN ---
     const LoginScreen = ({ onLogin }) => {
-      const [user, setUser] = useState(""); const [pass, setPass] = useState(""); const [error, setError] = useState("");
+      const [user, setUser] = useState("");
+      const [pass, setPass] = useState("");
+      const [error, setError] = useState("");
+
       const handle = async (e) => {
         e.preventDefault();
         try {
             const doc = await db.collection(COL_USUARIOS).doc(user).get();
             if (doc.exists && doc.data().senha === pass) {
                 await registrarAuditoria(user, 'login', doc.data().role || 'viewer');
-                onLogin(user, doc.data().role || 'viewer'); return;
+                onLogin(user, doc.data().role || 'viewer');
+                return;
             }
         } catch(e) { console.log("Verificando hardcode..."); }
-        if (user === "NB ADVOCACIA" && pass === "NB07242530") { await registrarAuditoria(user, 'login', 'master'); onLogin(user, "master"); return; }
+
+        if (user === "NB ADVOCACIA" && pass === "NB07242530") {
+            await registrarAuditoria(user, 'login', 'master');
+            onLogin(user, "master");
+            return;
+        }
         setError("Dados incorretos.");
       };
+
       return (
         <div className="min-h-screen bg-navy flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in">
@@ -356,7 +396,7 @@
       );
     };
 
-    // --- APP PRINCIPAL ---
+    // --- APP ---
     const AppContent = () => {
       const [authOk, setAuthOk] = useState(false);
       const [user, setUser] = useState("");
@@ -365,20 +405,20 @@
       const [busca, setBusca] = useState("");
       const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
       const [aba, setAba] = useState('dashboard');
+
       const [modal, setModal] = useState(false);
       const [fichaModal, setFichaModal] = useState(null);
       const [calcModal, setCalcModal] = useState(false);
-      const [auditoriaModal, setAuditoriaModal] = useState(false);
+      const [auditoriaModal, setAuditoriaModal] = useState(false); 
       const [editingId, setEditingId] = useState(null);
       const [modalSenha, setModalSenha] = useState(false);
       const [novaSenha, setNovaSenha] = useState("");
+      const [listaUsuarios, setListaUsuarios] = useState([]);
+      const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoMembro, setNovoMembro] = useState("");
       
-      // ESTADOS MASTER: EDITAR USUÁRIO
-      const [editingUser, setEditingUser] = useState(null); // ID do user sendo editado
-      const [listaUsuarios, setListaUsuarios] = useState([]);
-      const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
+      const [editingUser, setEditingUser] = useState(null); 
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "", 
@@ -394,11 +434,24 @@
       const [formData, setFormData] = useState(initialForm);
 
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
-      const handleLogout = async () => { try { await registrarAuditoria(user, 'logout', role); } catch(e) {} window.location.reload(); };
+
+      const handleLogout = async () => {
+        try {
+          await registrarAuditoria(user, 'logout', role);
+        } catch(e) {}
+        window.location.reload();
+      };
 
       useEffect(() => {
-        const handleEsc = (e) => { if (e.key === 'Escape') { setModal(false); setCalcModal(false); setFichaModal(null); setModalSenha(false); setAuditoriaModal(false); } };
-        window.addEventListener('keydown', handleEsc); return () => window.removeEventListener('keydown', handleEsc);
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                setModal(false); setCalcModal(false);
+                setFichaModal(null); setModalSenha(false);
+                setAuditoriaModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
       }, []);
 
       useEffect(() => {
@@ -412,7 +465,6 @@
         return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
-      // Carregar usuários para Master e Admin
       useEffect(() => {
         if (aba === 'equipe' && (role === 'master' || role === 'admin')) {
             const unsubUsers = db.collection(COL_USUARIOS).onSnapshot(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
@@ -424,7 +476,8 @@
           const total = processos.length;
           const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento').length;
           const conclusos = processos.filter(p => p.statusProcessual === 'Concluso').length;
-          const ramosCount = {}; processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
+          const ramosCount = {};
+          processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
           return { total, ativos, conclusos, ramosCount };
       }, [processos]);
 
@@ -437,15 +490,13 @@
           await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role }); 
           alert("Salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"}); setEditingUser(null);
       };
-      
-      const excluirUsuario = async (id) => { if (!confirm("Remover acesso?")) return; await db.collection(COL_USUARIOS).doc(id).delete(); };
-      
+      const excluirUsuario = async (id) => { if (!confirm("Remover?")) return; await db.collection(COL_USUARIOS).doc(id).delete(); };
       const prepararEdicaoUsuario = (u) => { setEditingUser(u.id); setNovoUsuario({ nome: u.id, senha: u.senha, role: u.role || "viewer" }); };
 
       const salvar = async () => { if (!formData.cliente) return alert("Nome do cliente obrigatório."); try { if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData); else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()}); setModal(false); setEditingId(null); setFormData(initialForm); } catch (e) { alert("Erro ao salvar."); } };
       const apagar = async (id) => { if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
       const exportar = () => { const ws = XLSX.utils.json_to_sheet(processos); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Processos"); XLSX.writeFile(wb, "Processos_NB.xlsx"); };
-      
+
       const processosFiltrados = processos.filter(p => {
           const matchBusca = p.cliente.toLowerCase().includes(busca.toLowerCase()) || (p.cpf && p.cpf.includes(busca));
           const matchResp = filtroResponsavel === "Todos" || p.advogado === filtroResponsavel;
@@ -506,7 +557,7 @@
                  </div>
              )}
 
-             {/* EQUIPE (MASTER & ADMIN - VISUALIZAÇÃO) */}
+             {/* EQUIPE (MASTER & ADMIN) */}
              {aba === 'equipe' && (role === 'master' || role === 'admin') && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
                     {/* GESTÃO DE ACESSOS (LOGIN) */}
