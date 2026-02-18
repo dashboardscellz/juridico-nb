@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v14.0</title>
+  <title>NB Advocacia - Gestão Jurídica v16.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -40,16 +40,9 @@
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
       #print-area { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 100%; 
-        height: auto !important; 
-        max-height: none !important; 
-        overflow: visible !important; 
-        padding: 20px; 
-        background: white; 
-        box-shadow: none;
+        position: absolute; left: 0; top: 0; width: 100%; height: auto !important; 
+        max-height: none !important; overflow: visible !important; padding: 20px; 
+        background: white; box-shadow: none;
       }
       .no-print { display: none !important; }
     }
@@ -80,9 +73,19 @@
     const COL_USUARIOS = 'credenciais_advocacia';
     const COL_PROFISSIONAIS = 'equipe_nomes_nb'; 
 
-    // --- LISTAS ---
+    // --- DADOS COMPLETOS DE CIDADES ---
+    const DADOS_ESTADOS = {
+        "Pernambuco": [
+            "Recife", "Jaboatão dos Guararapes", "Olinda", "Caruaru", "Petrolina", "Paulista", "Cabo de Santo Agostinho", "Camaragibe", "Garanhuns", "Vitória de Santo Antão", "Igarassu", "São Lourenço da Mata", "Abreu e Lima", "Santa Cruz do Capibaribe", "Ipojuca", "Serra Talhada", "Araripina", "Gravatá", "Carpina", "Goiana", "Belo Jardim", "Arcoverde", "Ouricuri", "Escada", "Pesqueira", "Surubim", "Palmares", "Moreno", "Bezerros", "Salgueiro", "São Bento do Una", "Buíque", "Paudalho", "Limoeiro", "Timbaúba", "Brejo da Madre de Deus", "Bom Conselho", "Ribeirão", "Sirinhaém", "Águas Belas", "Lajedo", "Bonito", "Toritama", "Catende", "Barreiros", "Santa Maria da Boa Vista", "Bom Jardim", "São José do Belmonte", "Bodocó", "Afogados da Ingazeira", "Aliança", "Sertânia", "Custódia", "Petrolândia", "Água Preta", "São José do Egito", "Caetés", "Itambé", "João Alfredo", "Vicência", "Passira", "Gameleira", "Exu", "També", "Itapissuma", "Tabira", "Nazaré da Mata", "Glória do Goitá", "Capoeiras", "Lagoa Grande", "Agrestina", "Sanharó", "Tacaratu", "Pombos", "Cupira", "Panelas", "São Caetano", "Macaparana", "Condado", "Pedra", "Altinho", "Orobó", "Amaraji", "Rio Formoso", "Feira Nova", "Flores", "Itaíba", "Brejão", "São Joaquim do Monte", "Chã Grande", "Cachoeirinha", "Trindade", "Belém de São Francisco", "Canhotinho", "Correntes", "Tamandaré", "São João", "Joaquim Nabuco", "Lagoa dos Gatos", "Cumaru", "Camocim de São Félix", "Maraial", "Jurema", "Barra de Guabiraba", "Jupi", "Primavera", "Jatobá", "Inajá", "Mirandiba", "Riacho das Almas", "Lagoa do Itaenga", "Vertentes", "São Benedito do Sul", "Ipubi", "Manari", "Tacaimbó", "Sairé", "Jataúba", "Caicó", "Capoeiras", "Casinhas", "Cedro", "Chã de Alegria", "Cortês", "Dormentes", "Ferreiros", "Frei Miguelinho", "Granito", "Iati", "Ibimirim", "Ibirajuba", "Iguaracy", "Ingazeira", "Itacuruba", "Itapetim", "Jaqueira", "Jataúba", "Jucati", "Jupi", "Jurema", "Lagoa do Carro", "Lagoa do Ouro", "Machados", "Moreilândia", "Orocó", "Palmeirina", "Paranatama", "Parnamirim", "Poção", "Primavera", "Quipapá", "Quixaba", "Saloá", "Salgadinho", "Santa Cruz", "Santa Cruz da Baixa Verde", "Santa Filomena", "Santa Terezinha", "São Vicente Férrer", "Solidão", "Terezinha", "Terra Nova", "Tupanatinga", "Tuparetama", "Venturosa", "Verdejante", "Vertente do Lério", "Xexéu"
+        ],
+        "Paraíba": [
+            "João Pessoa", "Campina Grande", "Santa Rita", "Patos", "Bayeux", "Sousa", "Cajazeiras", "Cabedelo", "Guarabira", "Sapé", "Queimadas", "Mamanguape", "Pombal", "Monteiro", "São Bento", "Esperança", "Catolé do Rocha", "Pedras de Fogo", "Lagoa Seca", "Conde", "Itaporanga", "Solânea", "Rio Tinto", "Alagoa Grande", "Princesa Isabel", "Itabaiana", "Bananeiras", "Areia", "Mari", "Caaporã", "Alagoa Nova", "Cuité", "São José de Piranhas", "Aroeiras", "Remígio", "Itapororoca", "Pitimbu", "Picuí", "Conceição", "Ingá", "Pedra Lavrada", "Cacimba de Dentro", "Juazeirinho", "Araruna", "Belém", "Uiraúna", "Taperoá", "Teixeira", "Soledade", "Pocinhos", "Alhandra", "Coremas", "Sumé", "Boqueirão", "Piancó", "São João do Rio do Peixe", "Tavares", "Lucena", "Brejo do Cruz", "Serra Branca", "Gurinhém", "Araçagi", "Mogeiro", "Desterro", "Cruz do Espírito Santo", "Juripiranga", "Barra de Santa Rosa", "Salgado de São Félix", "Aguiar", "Imaculada", "Jacaraú", "Casserengue", "Santa Luzia", "Nova Floresta", "Pirpirituba", "Manaíra", "Dona Inês", "Mulungu", "Cuitegi", "Natuba", "Massaranduba", "Fagundes", "Tacima", "Baía da Traição", "Serraria", "Borborema", "Logradouro", "Mataraca", "Riachão do Poço", "Sobrado", "Caldas Brandão", "Pilões", "São José dos Ramos", "Duas Estradas", "Marcação", "Sertãozinho", "Lagoa de Dentro", "Curral de Cima", "Capim", "Cuité de Mamanguape", "Pedro Régis", "Riacho de Santo Antônio", "Alagoinha"
+        ]
+    };
+
+    const LISTA_ESTADOS = ["PE", "PB"]; // Para o cadastro, podemos manter simples ou expandir se quiser
+
     const LISTA_RAMOS = ["Cível", "Previdenciário", "Trabalhista", "Penal", "Família e Sucessões", "Consumidor", "Administrativo", "Tributário", "Empresarial", "Eleitoral", "Ambiental", "Digital", "Imobiliário", "Militar", "Agrário", "Outros"];
-    const LISTA_ESTADOS = ["PE", "PB", "SP", "RJ", "MG", "BA", "AC", "AL", "AP", "AM", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "PA", "PR", "PI", "RN", "RS", "RO", "RR", "SC", "SE", "TO"];
     const LISTA_EQUIPE_PADRAO = ["Evison Nascimento", "Adiellyson Bomfim", "Manassés Oliveira (Estagiário)", "Bárbara Brenda (Estagiária)"];
 
     // --- ÍCONES ---
@@ -159,12 +162,22 @@
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
     const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
 
-    // --- CALCULADORA (AJUSTADA: SCROLL INTERNO) ---
+    // --- CALCULADORA (AJUSTADA: SCROLL INTERNO E DINÂMICA) ---
     const CalculatorModal = ({ onClose }) => {
         const [dataInicial, setDataInicial] = useState("");
         const [dias, setDias] = useState("");
         const [tipo, setTipo] = useState("uteis");
         const [resultado, setResultado] = useState(null);
+        const [calcEstado, setCalcEstado] = useState("Pernambuco");
+        const [calcCidade, setCalcCidade] = useState("");
+        const [tipoProcesso, setTipoProcesso] = useState("Eletrônico");
+
+        // Atualiza a cidade quando muda o estado
+        useEffect(() => {
+            if (DADOS_ESTADOS[calcEstado]) {
+                setCalcCidade(DADOS_ESTADOS[calcEstado][0]);
+            }
+        }, [calcEstado]);
 
         const calcular = () => {
             if (!dataInicial || !dias) return;
@@ -191,11 +204,28 @@
                     </div>
                     
                     <div className="space-y-3">
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Pernambuco</option><option>Paraíba</option><option>São Paulo</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Recife</option><option>Goiana</option><option>Olinda</option></select>
+                        {/* ESTADO */}
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}>
+                            <option value="Pernambuco">Pernambuco</option>
+                            <option value="Paraíba">Paraíba</option>
+                        </select>
+
+                        {/* MUNICÍPIO (DINÂMICO) */}
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>
+                            {DADOS_ESTADOS[calcEstado] && DADOS_ESTADOS[calcEstado].map(cidade => (
+                                <option key={cidade} value={cidade}>{cidade}</option>
+                            ))}
+                        </select>
+
                         <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Processo de Conhecimento</option><option>Execução</option></select>
-                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option></select>
+                        
+                        {/* PROCESSO (CORRIGIDO) */}
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm" value={tipoProcesso} onChange={e=>setTipoProcesso(e.target.value)}>
+                            <option>Eletrônico</option>
+                            <option>Físico</option>
+                        </select>
+
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option><option>TJPB</option></select>
                     </div>
 
                     <div className="mt-6 mb-2">
