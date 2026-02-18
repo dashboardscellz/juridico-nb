@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v11.0</title>
+  <title>NB Advocacia - Gestão Jurídica v13.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -29,17 +29,28 @@
     
     .bg-navy { background-color: #0f172a; }
     
-    /* Scrollbar */
+    /* Scrollbar Fina e Elegante */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Estilo de Impressão */
+    /* Estilo de Impressão (Remove scroll e mostra tudo) */
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
+      #print-area { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        height: auto !important; 
+        max-height: none !important; 
+        overflow: visible !important; 
+        padding: 20px; 
+        background: white; 
+        box-shadow: none;
+      }
       .no-print { display: none !important; }
     }
   </style>
@@ -110,13 +121,13 @@
     const FichaModal = ({ p, onClose }) => {
         return (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
-                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-8 relative min-h-[500px]">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
                     <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
-                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center">
+                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center shrink-0">
                         <div><h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p></div>
                         <div className="text-right text-xs text-slate-500"><p>Ficha Gerada em: {new Date().toLocaleDateString()}</p><p>ID: {p.id.slice(0,8)}</p></div>
                     </div>
-                    <div className="space-y-6">
+                    <div className="space-y-6 overflow-y-visible">
                         <div className="bg-slate-50 p-4 rounded border border-slate-200">
                             <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
                             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -126,7 +137,9 @@
                         <div className="border border-slate-200 p-4 rounded">
                             <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div><div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div><div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
+                                {p.ramo !== 'Previdenciário' && (<div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>)}
+                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6">
@@ -134,7 +147,7 @@
                             <div className="border border-orange-100 bg-orange-50/30 p-4 rounded"><h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3><div className="text-sm"><p><span className="font-bold">Valor:</span> {p.valorContrato}</p><p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p><p><span className="font-bold">Status:</span> {p.statusPagamento}</p></div></div>
                         </div>
                     </div>
-                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400"><p>Documento para uso interno e acompanhamento processual.</p><p>NB Advocacia - Todos os direitos reservados.</p></div>
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400 shrink-0"><p>Documento para uso interno e acompanhamento processual.</p><p>NB Advocacia - Todos os direitos reservados.</p></div>
                     <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2"><Icons.Check/> IMPRIMIR / SALVAR PDF</button></div>
                 </div>
             </div>
@@ -146,7 +159,7 @@
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
     const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
 
-    // --- CALCULADORA (ESTILO PRAZO FÁCIL - IDÊNTICO) ---
+    // --- CALCULADORA (AJUSTADA: SCROLL INTERNO) ---
     const CalculatorModal = ({ onClose }) => {
         const [dataInicial, setDataInicial] = useState("");
         const [dias, setDias] = useState("");
@@ -167,7 +180,7 @@
 
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
-                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
                     {/* CABEÇALHO LIMPO COM BOTÃO DE FECHAR */}
                     <div className="flex justify-between items-start mb-6">
                         <div className="w-full">
@@ -222,7 +235,6 @@
       const handle = async (e) => {
         e.preventDefault();
         
-        // 1. TENTA NO BANCO (PRIORIDADE)
         try {
             const doc = await db.collection(COL_USUARIOS).doc(user).get();
             if (doc.exists && doc.data().senha === pass) {
@@ -231,7 +243,6 @@
             }
         } catch(e) { console.log("Verificando hardcode..."); }
 
-        // 2. FALLBACK HARDCODE (SE NÃO TIVER NO BANCO AINDA)
         if (user === "NB ADVOCACIA" && pass === "NB07242530") { onLogin(user, "master"); return; }
         
         setError("Dados incorretos.");
@@ -435,7 +446,18 @@
                         <hr className="border-slate-100"/>
                         <div className="space-y-3">
                             <div className="flex items-center gap-4 mb-2"><label className="text-[10px] font-bold text-navy uppercase tracking-wider block">Ramo:</label><select className="p-1 border rounded text-sm font-bold text-navy" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select></div>
-                            <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-3"><h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div></div></div>
+                            
+                            {/* PARTE CONTRÁRIA - SÓ APARECE SE NÃO FOR PREVIDENCIÁRIO */}
+                            {formData.ramo !== 'Previdenciário' && (
+                                <div className="bg-red-50 p-3 rounded-xl border border-red-100 mb-3">
+                                    <h4 className="text-xs font-bold text-red-800 uppercase mb-2 flex items-center gap-2"><Icons.Briefcase/> Parte Contrária</h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Nome</label><input className="w-full p-2 border rounded text-sm" value={formData.parteContraria} onChange={e=>setFormData({...formData, parteContraria: e.target.value})}/></div>
+                                        <div><label className="text-[10px] font-bold text-slate-500 uppercase">Tipo</label><select className="w-full p-2 border rounded text-sm" value={formData.tipoParteContraria} onChange={e=>setFormData({...formData, tipoParteContraria: e.target.value})}><option>Pessoa Física</option><option>Pessoa Jurídica</option><option>Ente Público</option></select></div>
+                                    </div>
+                                </div>
+                            )}
+
                             {formData.ramo === 'Previdenciário' ? (<div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3"><h4 className="text-xs font-bold text-blue-800 uppercase flex items-center gap-2"><Icons.Users/> Previdenciário</h4><div className="grid grid-cols-2 gap-3"><div className="col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Patologia / Benefício</label><input className="w-full p-2 border rounded text-sm" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Login GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Senha GOV</label><input className="w-full p-2 border rounded text-sm font-mono bg-white" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Perícia Médica</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataPericia} onChange={e=>setFormData({...formData, dataPericia: e.target.value})}/></div><div><label className="text-[10px] font-bold text-slate-500 uppercase">Avaliação Social</label><input type="datetime-local" className="w-full p-2 border rounded text-sm" value={formData.dataSocial} onChange={e=>setFormData({...formData, dataSocial: e.target.value})}/></div></div></div>) : (<div className="grid grid-cols-2 gap-3"><div className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={formData.semProcesso} onChange={e=>setFormData({...formData, semProcesso: e.target.checked})}/> <span className="text-xs text-slate-500">Ainda não possui nº de processo</span></div>{!formData.semProcesso && <div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Nº Processo</label><input className="w-full p-2 border rounded font-mono" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/></div>}</div>)}
                             <div className="grid grid-cols-2 gap-3"><div><label className="text-[10px] font-bold text-slate-400 uppercase">Responsável</label><select className="w-full p-2 border rounded text-sm" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select></div><div><label className="text-[10px] font-bold text-red-400 uppercase">Prazo Fatal</label><input type="date" className="w-full p-2 border rounded text-sm" value={formData.prazo} onChange={e=>setFormData({...formData, prazo: e.target.value})}/></div><div className="col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase">Status</label><select className="w-full p-2 border rounded text-sm" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select></div></div>
                         </div>
