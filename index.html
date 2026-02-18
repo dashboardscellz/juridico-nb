@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v19.1 (Visual Fix)</title>
+  <title>NB Advocacia - Gestão Jurídica v19.2 (Proteção de Senhas)</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -595,18 +595,30 @@
                  </div>
              )}
 
-             {/* EQUIPE */}
+             {/* EQUIPE (MASTER & ADMIN) */}
              {aba === 'equipe' && (role === 'master' || role === 'admin') && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
+                    {/* GESTÃO DE ACESSOS (LOGIN) */}
                     <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-100">
                         <h3 className="font-serif font-bold text-xl text-navy-900 mb-6 flex gap-3 items-center"><div className="p-2 bg-navy-50 rounded-lg text-navy-900"><div className="w-5 h-5"><Icons.Key/></div></div> Gestão de Acessos</h3>
                         
+                        {/* FORMULÁRIO DE EDIÇÃO - APENAS MASTER */}
                         {role === 'master' && (
                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 space-y-4">
-                                <input className={`w-full p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition ${editingUser ? 'bg-slate-100 text-slate-500' : ''}`} placeholder="Nome de Usuário (Login)" disabled={!!editingUser} value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
+                                <input 
+                                    className={`w-full p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition ${editingUser ? 'bg-slate-100 text-slate-500' : ''}`} 
+                                    placeholder="Nome de Usuário (Login)" 
+                                    disabled={!!editingUser}
+                                    value={novoUsuario.nome} 
+                                    onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}
+                                />
                                 <div className="flex gap-3">
                                     <input className="flex-1 p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
-                                    <select className="p-3 border rounded-lg bg-white text-sm font-medium text-slate-700 focus:ring-2 focus:ring-navy-900/10 outline-none transition" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option><option value="master">Master</option></select>
+                                    <select className="p-3 border rounded-lg bg-white text-sm font-medium text-slate-700 focus:ring-2 focus:ring-navy-900/10 outline-none transition" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}>
+                                        <option value="viewer">Visualizador</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="master">Master</option>
+                                    </select>
                                     <button onClick={salvarUsuario} className="bg-navy-900 text-white px-6 rounded-lg font-bold text-sm hover:bg-navy-800 transition shadow-lg shadow-navy-900/20">{editingUser ? 'Atualizar' : 'Criar'}</button>
                                     {editingUser && <button onClick={()=>{setEditingUser(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="bg-white text-slate-400 border border-slate-200 px-3 rounded-lg hover:bg-slate-50 hover:text-red-500 transition"><Icons.X/></button>}
                                 </div>
@@ -615,12 +627,24 @@
 
                         <div className="overflow-hidden rounded-xl border border-slate-100">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100"><tr><th className="p-4">Usuário</th><th className="p-4">Senha</th><th className="p-4">Perfil</th>{role === 'master' && <th className="p-4 text-right">Ações</th>}</tr></thead>
+                                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                                    <tr>
+                                        <th className="p-4">Usuário</th>
+                                        <th className="p-4">Senha</th>
+                                        <th className="p-4">Perfil</th>
+                                        {role === 'master' && <th className="p-4 text-right">Ações</th>}
+                                    </tr>
+                                </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {listaUsuarios.map(u => (
                                         <tr key={u.id} className="group hover:bg-slate-50/80 transition">
                                             <td className="p-4 font-bold text-navy-900 flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">{u.id.charAt(0).toUpperCase()}</div>{u.id}</td>
-                                            <td className="p-4 font-mono text-slate-500 text-xs bg-slate-50/50 rounded">{u.senha}</td>
+                                            
+                                            {/* PROTEÇÃO DE SENHA AQUI */}
+                                            <td className="p-4 font-mono text-slate-500 text-xs bg-slate-50/50 rounded">
+                                                {role === 'master' ? u.senha : '****'}
+                                            </td>
+
                                             <td className="p-4"><span className={`uppercase text-[10px] font-bold px-2 py-1 rounded border ${u.role==='master'?'bg-purple-50 text-purple-700 border-purple-100':u.role==='admin'?'bg-blue-50 text-blue-700 border-blue-100':'bg-slate-50 text-slate-500 border-slate-100'}`}>{u.role}</span></td>
                                             {role === 'master' && (
                                                 <td className="p-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
@@ -637,9 +661,11 @@
                         </div>
                     </div>
 
+                    {/* CORPO JURÍDICO (DROPDOWN LIST) */}
                     <div className="bg-white rounded-2xl shadow-sm p-8 border border-slate-100">
                         <h3 className="font-serif font-bold text-xl text-navy-900 mb-6 flex gap-3 items-center"><div className="p-2 bg-navy-50 rounded-lg text-navy-900"><div className="w-5 h-5"><Icons.Users/></div></div> Corpo Jurídico</h3>
                         
+                        {/* ADICIONAR MEMBRO - APENAS MASTER */}
                         {role === 'master' && (
                             <div className="flex gap-3 mb-6">
                                 <input className="flex-1 p-3 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-navy-900/10 outline-none transition" placeholder="Nome Completo do Advogado" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/>
