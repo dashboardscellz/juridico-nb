@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v5.0</title>
+  <title>NB Advocacia - Gestão Jurídica</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -40,7 +40,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- CONFIGURAÇÃO FIREBASE (ATUALIZADA) ---
+    // --- CONFIGURAÇÃO FIREBASE (NOVAS CHAVES JURIDICO-NB) ---
     const firebaseConfig = {
       apiKey: "AIzaSyAP_VVV_tpGBpDMj77UFM3Z9QnqkdQafNY",
       authDomain: "juridico-nb.firebaseapp.com",
@@ -51,7 +51,10 @@
       measurementId: "G-TYQB8QGNG1"
     };
 
-    if (!firebase.apps.length) try { firebase.initializeApp(firebaseConfig); } catch (e) { console.error(e); }
+    // Inicialização segura do Firebase
+    if (!firebase.apps.length) {
+        try { firebase.initializeApp(firebaseConfig); } catch (e) { console.error("Erro Firebase:", e); }
+    }
     const db = firebase.firestore();
     const auth = firebase.auth();
     
@@ -165,12 +168,21 @@
 
       const handle = async (e) => {
         e.preventDefault();
+        // LOGIN MESTRE LOCAL
         if (user === "NB ADVOCACIA" && pass === "NB07242530") { onLogin(user, "master"); return; }
+        
+        // LOGIN VIA BANCO
         try {
             const doc = await db.collection(COL_USUARIOS).doc(user).get();
-            if (doc.exists && doc.data().senha === pass) onLogin(user, doc.data().role || 'viewer');
-            else setError("Dados incorretos.");
-        } catch(e) { setError("Erro de conexão (Verifique a internet)."); }
+            if (doc.exists && doc.data().senha === pass) {
+                onLogin(user, doc.data().role || 'viewer');
+            } else {
+                setError("Dados incorretos.");
+            }
+        } catch(e) { 
+            console.error(e);
+            setError("Erro de conexão (Verifique a internet)."); 
+        }
       };
 
       return (
@@ -208,14 +220,11 @@
         cliente: "", cpf: "", telefone: "", descricao: "",
         numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Evison Nascimento",
         prazo: "", statusProcessual: "Em Andamento",
-        // Previdenciário
         patologia: "", govLogin: "", govSenha: "", 
         dataEntrada: "", statusBeneficio: "Em Análise", 
         dataPericia: "", dataSocial: "",
-        // Documentos
         procuracaoEntregue: false, linkProcuracao: "",
         contratoEntregue: false, linkContrato: "",
-        // Financeiro
         tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", 
         valorContrato: "", dataPagamento: "", statusPagamento: "Pendente"
       };
@@ -225,8 +234,12 @@
 
       useEffect(() => {
         if (!authOk) return;
-        auth.signInAnonymously();
-        const unsub = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
+        auth.signInAnonymously().catch(e => console.error("Auth Anonima falhou", e));
+        
+        const unsub = db.collection(COL_PROCESSOS).onSnapshot(snap => {
+            setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()})));
+        }, err => console.error("Erro ler processos", err));
+        
         return () => unsub();
       }, [authOk]);
 
@@ -236,7 +249,7 @@
             if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData);
             else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()});
             setModal(false); setEditingId(null); setFormData(initialForm);
-        } catch (e) { alert("Erro ao salvar."); }
+        } catch (e) { alert("Erro ao salvar: " + e.message); }
       };
 
       const apagar = async (id) => { if(confirm("Deseja excluir?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
@@ -253,7 +266,6 @@
 
       return (
         <div className="min-h-screen pb-20 fade-in">
-          {/* HEADER */}
           <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm flex justify-between items-center no-print">
              <div className="flex items-center gap-3">
                  <div className="text-yellow-600"><Icons.Scale /></div>
@@ -266,7 +278,6 @@
                  <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200">
                     <Icons.Calculator/> <span className="hidden md:inline">Calc. Prazo</span>
                  </button>
-                 
                  {(role !== 'viewer') && (
                      <button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} 
                              className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors">
