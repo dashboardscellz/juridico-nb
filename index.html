@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Jurídica v17.5</title>
+  <title>NB Advocacia - Gestão Jurídica v18.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -32,7 +32,7 @@
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; padding: 20px; background: white; }
       .no-print { display: none !important; }
     }
   </style>
@@ -53,7 +53,7 @@
       measurementId: "G-9380LF0TYF"
     };
 
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    if (!firebase.apps.length) { try { firebase.initializeApp(firebaseConfig); } catch (e) { console.error("Erro Firebase:", e); } }
     const db = firebase.firestore();
     const auth = firebase.auth();
     
@@ -109,7 +109,7 @@
       } catch (e) { console.error("Erro auditoria:", e); }
     };
 
-    const AuditoriaModal = ({ onClose, isAdminMaster }) => {
+    const AuditoriaModal = ({ onClose, isMaster }) => {
       const [logs, setLogs] = useState([]);
       const [loading, setLoading] = useState(true);
       const [filtroAcao, setFiltroAcao] = useState("Todos");
@@ -117,12 +117,12 @@
       const [newIds, setNewIds] = useState(new Set());
 
       useEffect(() => {
-        const unsub = db.collection(COL_AUDITORIA).orderBy("epoch", "desc").limit(300).onSnapshot(snap => {
+        const unsub = db.collection(COL_AUDITORIA).orderBy("epoch", "desc").limit(200).onSnapshot(snap => {
             const novosIds = new Set();
             const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             snap.docChanges().forEach(change => { if (change.type === 'added') novosIds.add(change.doc.id); });
             setLogs(docs); setNewIds(novosIds); setLoading(false);
-            setTimeout(() => setNewIds(new Set()), 1000);
+            setTimeout(() => setNewIds(new Set()), 800);
           });
         return () => unsub();
       }, []);
@@ -134,15 +134,15 @@
         XLSX.writeFile(wb, `Auditoria_NB_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
       };
 
-      const limparAuditoria = async () => {
-        if (!confirm("⚠️ ATENÇÃO: Isso excluirá permanentemente todo o histórico de acessos visível. Deseja continuar?")) return;
+      const limparHistorico = async () => {
+        if (!confirm("⚠️ EXCLUSÃO DEFINITIVA: Deseja apagar todo o histórico de auditoria visível?")) return;
         try {
           const batch = db.batch();
-          logs.forEach(log => batch.delete(db.collection(COL_AUDITORIA).doc(log.id)));
+          logs.forEach(doc => batch.delete(db.collection(COL_AUDITORIA).doc(doc.id)));
           await batch.commit();
-          alert("Histórico limpo com sucesso!");
-        } catch (e) { alert("Erro ao limpar histórico."); }
-      };
+          alert("Histórico excluído com sucesso.");
+        } catch (e) { alert("Erro ao excluir."); }
+      }
 
       const logsFiltrados = logs.filter(l => (filtroAcao === "Todos" || l.acao === filtroAcao) && (!filtroUsuario || l.usuario.toLowerCase().includes(filtroUsuario.toLowerCase())));
 
@@ -152,26 +152,26 @@
             <div className="bg-[#0f172a] px-6 py-4 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="bg-yellow-500/20 p-2 rounded-lg text-yellow-500"><Icons.Audit /></div>
-                <div><h2 className="text-white font-bold text-lg">AUDITORIA DE ACESSOS</h2><p className="text-slate-400 text-xs">Monitoramento em Tempo Real</p></div>
+                <div><h2 className="text-white font-bold text-lg">AUDITORIA DE ACESSOS</h2><p className="text-slate-400 text-xs">Monitoramento NB Advocacia</p></div>
                 <div className="flex items-center gap-1.5 bg-green-900/40 border border-green-700/50 px-3 py-1 rounded-full ml-2"><span className="w-2 h-2 rounded-full bg-green-400 pulse-green"></span><span className="text-green-400 text-[10px] font-bold">AO VIVO</span></div>
               </div>
               <button onClick={onClose} className="text-slate-400 hover:text-white transition"><Icons.X /></button>
             </div>
             <div className="px-5 py-3 border-b bg-white flex flex-wrap gap-3 items-center">
               <input type="text" placeholder="Filtrar usuário..." className="px-3 py-2 border rounded-lg text-xs flex-1 outline-none bg-slate-50" value={filtroUsuario} onChange={e => setFiltroUsuario(e.target.value)} />
-              <select className="border rounded-lg px-3 py-2 text-xs bg-white font-bold text-slate-600 outline-none" value={filtroAcao} onChange={e => setFiltroAcao(e.target.value)}><option value="Todos">Todos</option><option value="login">Entradas</option><option value="logout">Saídas</option></select>
+              <select className="border rounded-lg px-3 py-2 text-xs bg-white font-bold text-slate-600 outline-none" value={filtroAcao} onChange={e => setFiltroAcao(e.target.value)}><option value="Todos">Eventos</option><option value="login">Entradas</option><option value="logout">Saídas</option></select>
               <button onClick={exportarLogs} className="flex items-center gap-1.5 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded-lg hover:bg-green-100 transition"><Icons.Download /> Exportar</button>
-              {isAdminMaster && (
-                <button onClick={limparAuditoria} className="flex items-center gap-1.5 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 rounded-lg hover:bg-rose-600 hover:text-white transition"><Icons.Trash /> Limpar Tudo</button>
+              {isMaster && (
+                <button onClick={limparHistorico} className="flex items-center gap-1.5 text-xs font-bold bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg hover:bg-red-600 hover:text-white transition"><Icons.Trash /> Limpar Histórico</button>
               )}
             </div>
             <div className="overflow-y-auto custom-scrollbar flex-1">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-100 text-slate-500 text-[11px] font-bold uppercase sticky top-0 z-10"><tr><th className="px-5 py-3">Evento</th><th className="px-5 py-3">Usuário</th><th className="px-5 py-3">Perfil</th><th className="px-5 py-3">Data</th><th className="px-5 py-3">Hora</th></tr></thead>
+                <thead className="bg-slate-100 text-slate-500 text-[11px] font-bold uppercase sticky top-0 z-10 border-b"><tr><th className="px-5 py-3">Evento</th><th className="px-5 py-3">Usuário</th><th className="px-5 py-3">Perfil</th><th className="px-5 py-3">Data</th><th className="px-5 py-3">Horário</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {logsFiltrados.map(log => (
-                    <tr key={log.id} className={`${newIds.has(log.id) ? 'audit-row-new bg-yellow-50' : 'hover:bg-slate-50'}`}>
-                      <td className="px-5 py-3"><span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${log.acao==='login'?'bg-emerald-50 text-emerald-700':'bg-rose-50 text-rose-600'}`}>{log.acao==='login'?<Icons.LoginIn/>:<Icons.LoginOut/>} {log.acao.toUpperCase()}</span></td>
+                    <tr key={log.id} className={`${newIds.has(log.id) ? 'audit-row-new bg-yellow-50/60' : 'hover:bg-slate-50'}`}>
+                      <td className="px-5 py-3"><span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold ${log.acao==='login'?'bg-emerald-50 text-emerald-700 border-emerald-200':'bg-rose-50 text-rose-600 border-rose-200'} border`}>{log.acao==='login'?<Icons.LoginIn/>:<Icons.LoginOut/>} {log.acao.toUpperCase()}</span></td>
                       <td className="px-5 py-3 font-semibold text-slate-700">{log.usuario}</td>
                       <td className="px-5 py-3 uppercase text-[10px] font-bold text-slate-400">{log.role || 'viewer'}</td>
                       <td className="px-5 py-3 text-slate-600 font-mono text-xs">{log.data}</td>
@@ -186,16 +186,60 @@
       );
     };
 
+    const ChartComponent = ({ type, data, options }) => {
+        const canvasRef = useRef(null); const chartRef = useRef(null);
+        useEffect(() => {
+            if (!canvasRef.current) return;
+            if (chartRef.current) chartRef.current.destroy();
+            chartRef.current = new Chart(canvasRef.current, { type, data, options });
+            return () => { if (chartRef.current) chartRef.current.destroy(); };
+        }, [data, type, options]);
+        return <canvas ref={canvasRef} />;
+    };
+
+    const FichaModal = ({ p, onClose }) => {
+        return (
+            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
+                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
+                    <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center shrink-0">
+                        <div><h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p></div>
+                        <div className="text-right text-xs text-slate-500"><p>Ficha Gerada em: {new Date().toLocaleDateString()}</p><p>ID: {p.id.slice(0,8)}</p></div>
+                    </div>
+                    <div className="space-y-6">
+                        <div className="bg-slate-50 p-4 rounded border border-slate-200">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div><div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
+                            </div>
+                        </div>
+                        <div className="border border-slate-200 p-4 rounded">
+                            <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
+                                {p.ramo !== 'Previdenciário' && (<div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>)}
+                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            {p.ramo === 'Previdenciário' && (<div className="border border-blue-100 bg-blue-50/30 p-4 rounded"><h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3><ul className="text-xs space-y-1"><li><b>Benefício:</b> {p.patologia}</li><li><b>Login GOV:</b> {p.govLogin}</li><li><b>Senha GOV:</b> {p.govSenha}</li><li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li></ul></div>)}
+                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded"><h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3><div className="text-sm"><p><span className="font-bold">Valor:</span> {p.valorContrato}</p><p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p><p><span className="font-bold">Status:</span> {p.statusPagamento}</p></div></div>
+                        </div>
+                    </div>
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400 shrink-0"><p>NB Advocacia - Todos os direitos reservados.</p></div>
+                    <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center gap-2"><Icons.Check/> IMPRIMIR / SALVAR PDF</button></div>
+                </div>
+            </div>
+        );
+    };
+
+    const formatCPF = (v) => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
+
     const CalculatorModal = ({ onClose }) => {
-        const [dataInicial, setDataInicial] = useState("");
-        const [dias, setDias] = useState("");
-        const [tipo, setTipo] = useState("uteis");
-        const [resultado, setResultado] = useState(null);
-        const [calcEstado, setCalcEstado] = useState("Pernambuco");
-        const [calcCidade, setCalcCidade] = useState("");
-
+        const [dataInicial, setDataInicial] = useState(""); const [dias, setDias] = useState(""); const [tipo, setTipo] = useState("uteis"); const [resultado, setResultado] = useState(null); const [calcEstado, setCalcEstado] = useState("Pernambuco"); const [calcCidade, setCalcCidade] = useState("");
         useEffect(() => { if (DADOS_ESTADOS[calcEstado]) setCalcCidade(DADOS_ESTADOS[calcEstado][0]); }, [calcEstado]);
-
         const calcular = () => {
             if (!dataInicial || !dias) return;
             const dt = new Date(dataInicial); dt.setMinutes(dt.getMinutes() + dt.getTimezoneOffset());
@@ -203,36 +247,19 @@
             while (count < target) { dt.setDate(dt.getDate() + 1); if (tipo === 'uteis') { const day = dt.getDay(); if (day !== 0 && day !== 6) count++; } else { count++; } }
             setResultado(dt.toLocaleDateString('pt-BR'));
         };
-
         return (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8">
-                    <div className="flex justify-between items-start mb-6"><h3 className="text-blue-900 font-bold">Cálculo de Prazo</h3><button onClick={onClose} className="text-slate-400 hover:text-red-500"><Icons.X/></button></div>
-                    <div className="space-y-4">
-                        <select className="w-full p-2 border rounded" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option></select>
-                        <select className="w-full p-2 border rounded" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado]?.map(c => (<option key={c} value={c}>{c}</option>))}</select>
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-start mb-6"><div className="w-full text-center"><h3 className="text-blue-900 font-bold">Calculadora de Prazos</h3></div><button onClick={onClose} className="text-slate-400 hover:text-red-500"><Icons.X/></button></div>
+                    <div className="space-y-3">
+                        <select className="w-full p-2 border rounded text-sm" value={calcEstado} onChange={e=>setCalcEstado(e.target.value)}><option value="Pernambuco">Pernambuco</option><option value="Paraíba">Paraíba</option></select>
+                        <select className="w-full p-2 border rounded text-sm" value={calcCidade} onChange={e=>setCalcCidade(e.target.value)}>{DADOS_ESTADOS[calcEstado]?.map(c => (<option key={c} value={c}>{c}</option>))}</select>
                         <input type="date" className="w-full p-2 border rounded text-center" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
-                        <input type="number" className="w-full p-2 border rounded text-center" placeholder="Dias de prazo" value={dias} onChange={e=>setDias(e.target.value)}/>
-                        <div className="flex justify-center gap-8 py-2"><label className="flex gap-2"><input type="radio" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')}/> Úteis</label><label className="flex gap-2"><input type="radio" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')}/> Corridos</label></div>
-                        <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2 rounded">Calcular</button>
-                        {resultado && (<div className="bg-green-50 p-4 rounded text-center border mt-4"><p className="text-xs text-green-700 font-bold">PRAZO FINAL</p><p className="text-3xl font-extrabold text-green-800">{resultado}</p></div>)}
+                        <input type="number" className="w-full p-2 border rounded text-center" placeholder="Dias" value={dias} onChange={e=>setDias(e.target.value)}/>
                     </div>
-                </div>
-            </div>
-        );
-    };
-
-    const FichaModal = ({ p, onClose }) => {
-        return (
-            <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 print:p-0">
-                <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-6 relative flex flex-col max-h-[90vh] overflow-y-auto">
-                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 no-print"><Icons.X/></button>
-                    <div className="border-b-4 border-navy pb-4 mb-6"><h1 className="text-2xl font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold uppercase tracking-widest">Nascimento & Bomfim</p></div>
-                    <div className="space-y-6">
-                        <div className="bg-slate-50 p-4 rounded border"><h3 className="text-sm font-bold text-navy uppercase mb-2">Dados do Cliente</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><b>Nome:</b> {p.cliente}</div><div><b>CPF:</b> {p.cpf || '-'}</div><div><b>Tel:</b> {p.telefone || '-'}</div><div><b>Cidade:</b> {p.cidade}/{p.estado}</div></div></div>
-                        <div className="border p-4 rounded"><h3 className="text-sm font-bold text-navy uppercase mb-2">Processo</h3><div className="grid grid-cols-2 gap-4 text-sm"><div><b>Número:</b> {p.numeroProcesso || 'S/N'}</div><div><b>Ramo:</b> {p.ramo}</div><div><b>Status:</b> {p.statusProcessual}</div><div><b>Responsável:</b> {p.advogado}</div></div></div>
-                    </div>
-                    <div className="mt-auto pt-8 text-center no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-2 rounded font-bold">IMPRIMIR PDF</button></div>
+                    <div className="flex justify-center gap-8 py-4"><label className="flex gap-2"><input type="radio" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')}/> Úteis</label><label className="flex gap-2"><input type="radio" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')}/> Corridos</label></div>
+                    <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow">Calcular</button>
+                    {resultado && (<div className="bg-green-50 p-4 rounded text-center border border-green-200 mt-4"><p className="text-xs text-green-700 font-bold uppercase">Prazo Final</p><p className="text-3xl font-extrabold text-green-800">{resultado}</p></div>)}
                 </div>
             </div>
         );
@@ -254,12 +281,12 @@
       };
       return (
         <div className="min-h-screen bg-navy flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8"><div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
+          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in"><div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
             <form onSubmit={handle} className="space-y-4">
               <input className="w-full p-3 border rounded outline-none focus:border-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
               <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              <button className="w-full bg-navy text-white py-3 rounded font-bold">ENTRAR</button>
+              <button className="w-full bg-navy text-white py-3 rounded font-bold hover:bg-slate-800 transition">ENTRAR</button>
             </form>
           </div>
         </div>
@@ -271,138 +298,215 @@
       const [user, setUser] = useState("");
       const [role, setRole] = useState("viewer");
       const [processos, setProcessos] = useState([]);
-      const [aba, setAba] = useState('processos');
+      const [busca, setBusca] = useState("");
+      const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
+      const [aba, setAba] = useState('dashboard');
       const [modal, setModal] = useState(false);
       const [fichaModal, setFichaModal] = useState(null);
       const [calcModal, setCalcModal] = useState(false);
       const [auditoriaModal, setAuditoriaModal] = useState(false);
       const [editingId, setEditingId] = useState(null);
       const [editingUserId, setEditingUserId] = useState(null);
+      const [modalSenha, setModalSenha] = useState(false);
+      const [novaSenha, setNovaSenha] = useState("");
       const [listaUsuarios, setListaUsuarios] = useState([]);
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
+      const [novoMembro, setNovoMembro] = useState("");
 
-      const [formData, setFormData] = useState({ cliente: "", cpf: "", telefone: "", descricao: "", cidade: "", estado: "PE", ramo: "Cível", advogado: "Evison Nascimento", statusProcessual: "Em Andamento", valorContrato: "", statusPagamento: "Pendente" });
+      const initialForm = { cliente: "", cpf: "", telefone: "", descricao: "", rua: "", numero: "", bairro: "", cidade: "", estado: "PE", parteContraria: "", tipoParteContraria: "Pessoa Física", numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Evison Nascimento", prazo: "", statusProcessual: "Em Andamento", patologia: "", govLogin: "", govSenha: "", dataEntrada: "", statusBeneficio: "Em Análise", dataPericia: "", dataSocial: "", procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "", tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", valorContrato: "", statusPagamento: "Pendente" };
+      const [formData, setFormData] = useState(initialForm);
 
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
-      const handleLogout = async () => { await registrarAuditoria(user, 'logout', role); window.location.reload(); };
+      const handleLogout = async () => { try { await registrarAuditoria(user, 'logout', role); } catch(e) {} window.location.reload(); };
 
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously();
         const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))));
-        const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => { if (doc.exists) setListaEquipe(doc.data().nomes); });
+        const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => { if (doc.exists) setListaEquipe(doc.data().nomes); else db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: LISTA_EQUIPE_PADRAO }); });
         if (role === 'master') db.collection(COL_USUARIOS).onSnapshot(snap => setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))));
         return () => { unsubProc(); unsubEquipe(); };
       }, [authOk]);
 
+      const stats = useMemo(() => {
+          const total = processos.length;
+          const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento').length;
+          const conclusos = processos.filter(p => p.statusProcessual === 'Concluso').length;
+          const ramosCount = {}; processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
+          return { total, ativos, conclusos, ramosCount };
+      }, [processos]);
+
+      const adicionarMembroEquipe = async () => { if (!novoMembro) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: [...listaEquipe, novoMembro] }); setNovoMembro(""); };
+      const removerMembroEquipe = async (nome) => { if(!confirm("Remover?")) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: listaEquipe.filter(n => n !== nome) }); };
+      
       const salvarUsuario = async () => {
-        if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo.");
-        try {
+          if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo.");
           await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role });
-          alert("Usuário salvo!");
-          setNovoUsuario({nome: "", senha: "", role: "viewer"}); setEditingUserId(null);
-        } catch (e) { alert("Erro ao salvar."); }
+          alert("Salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"}); setEditingUserId(null);
       };
 
-      const editarUsuario = (u) => { setEditingUserId(u.id); setNovoUsuario({ nome: u.id, senha: u.senha, role: u.role || 'viewer' }); };
+      const prepararEdicaoUsuario = (u) => { setEditingUserId(u.id); setNovoUsuario({ nome: u.id, senha: u.senha, role: u.role || 'viewer' }); };
+
       const excluirUsuario = async (id) => { if (confirm("Remover acesso?")) await db.collection(COL_USUARIOS).doc(id).delete(); };
 
-      const salvarProcesso = async () => {
-          if (!formData.cliente) return alert("Nome obrigatório");
-          if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData);
-          else await db.collection(COL_PROCESSOS).add(formData);
-          setModal(false); setEditingId(null); setFormData({ cliente: "", cpf: "", telefone: "", descricao: "", cidade: "", estado: "PE", ramo: "Cível", advogado: "Evison Nascimento", statusProcessual: "Em Andamento", valorContrato: "", statusPagamento: "Pendente" });
+      const salvar = async () => {
+          if (!formData.cliente) return alert("Nome obrigatório.");
+          try {
+              if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData);
+              else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()});
+              setModal(false); setEditingId(null); setFormData(initialForm);
+          } catch (e) { alert("Erro ao salvar."); }
       };
+
+      const apagar = async (id) => { if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
+      const exportar = () => { const ws = XLSX.utils.json_to_sheet(processos); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Processos"); XLSX.writeFile(wb, "Processos_NB.xlsx"); };
+
+      const processosFiltrados = processos.filter(p => {
+          const matchBusca = p.cliente.toLowerCase().includes(busca.toLowerCase()) || (p.cpf && p.cpf.includes(busca));
+          const matchResp = filtroResponsavel === "Todos" || p.advogado === filtroResponsavel;
+          return matchBusca && matchResp;
+      });
 
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
       return (
-        <div className="min-h-screen pb-20">
-          <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm no-print">
-             <div className="flex items-center gap-3"><div className="text-yellow-600"><Icons.Scale /></div><div><h1 className="text-xl font-bold text-navy">NB ADVOCACIA</h1><span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{role}</span></div></div>
-             <div className="flex gap-2 items-center">
-                 <button onClick={()=>setAba('processos')} className={`px-4 py-2 rounded text-sm font-bold ${aba==='processos'?'bg-navy text-white':'bg-slate-100'}`}>Processos</button>
-                 {role === 'master' && (<button onClick={()=>setAba('equipe')} className={`px-4 py-2 rounded text-sm font-bold ${aba==='equipe'?'bg-navy text-white':'bg-slate-100'}`}>Equipe</button>)}
-                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 bg-slate-100 rounded text-sm"><Icons.Calculator/></button>
-                 {role === 'master' && (
-                   <button onClick={()=>setAuditoriaModal(true)} className="px-3 py-2 bg-purple-50 text-purple-700 rounded text-sm flex gap-2 font-bold"><Icons.Audit/> Auditoria</button>
-                 )}
-                 <button onClick={handleLogout} className="p-2 text-red-500 bg-red-50 rounded"><Icons.LogOut/></button>
+        <div className="min-h-screen pb-20 fade-in">
+          <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm flex justify-between items-center no-print">
+             <div className="flex items-center gap-3"><div className="text-yellow-600"><Icons.Scale /></div><div><h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1><span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role}</span></div></div>
+             <div className="flex gap-2 items-center flex-wrap">
+                 <button onClick={()=>setAba('dashboard')} className={`px-3 py-2 rounded text-sm font-bold border ${aba==='dashboard'?'bg-navy text-white':'bg-slate-100'}`}>Dashboard</button>
+                 <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold border ${aba==='processos'?'bg-navy text-white':'bg-slate-100'}`}>Processos</button>
+                 <button onClick={()=>setCalcModal(true)} className="px-3 py-2 bg-slate-100 rounded border"><Icons.Calculator/></button>
+                 {role === 'master' && (<button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold border ${aba==='equipe'?'bg-navy text-white':'bg-slate-100'}`}>Equipe</button>)}
+                 {role === 'master' && (<button onClick={()=>setAuditoriaModal(true)} className="px-3 py-2 bg-purple-50 text-purple-700 rounded border flex gap-2 font-bold"><Icons.Audit/> Auditoria</button>)}
+                 <button onClick={handleLogout} className="p-2 text-red-500 bg-red-50 rounded border border-red-100"><Icons.LogOut/></button>
+                 {role !== 'viewer' && (<button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition-colors"><Icons.Plus/> NOVO</button>)}
              </div>
           </header>
 
           <main className="max-w-7xl mx-auto px-6 py-8">
              {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
              {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
-             {auditoriaModal && <AuditoriaModal isAdminMaster={role==='master'} onClose={()=>setAuditoriaModal(false)} />}
+             {auditoriaModal && <AuditoriaModal isMaster={role==='master'} onClose={()=>setAuditoriaModal(false)} />}
+
+             {aba === 'dashboard' && (
+                 <div className="space-y-6 fade-in">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3>Total</h3><p className="text-3xl font-bold">{stats.total}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><h3>Em Andamento</h3><p className="text-3xl font-bold text-blue-600">{stats.ativos}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500"><h3>Conclusos</h3><p className="text-3xl font-bold text-green-600">{stats.conclusos}</p></div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold mb-4">Áreas</h4><div className="h-60 flex justify-center"><ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} /></div></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold mb-4">Volume</h4><div className="h-60"><ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false }} /></div></div>
+                     </div>
+                 </div>
+             )}
 
              {aba === 'equipe' && role === 'master' && (
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 fade-in">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border">
-                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Gestão de Acessos</h3>
-                        <div className="bg-slate-50 p-4 rounded-lg mb-6 space-y-3">
-                            <input className={`w-full p-2 border rounded ${editingUserId?'bg-slate-200':''}`} placeholder="Login do Usuário" disabled={!!editingUserId} value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
+                    <div className="bg-white rounded-xl shadow-sm p-6 border">
+                        <h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acessos ao Sistema</h3>
+                        <div className="bg-slate-50 p-4 rounded border mb-4 space-y-2">
+                            <input className={`w-full p-2 border rounded ${editingUserId?'bg-slate-200':''}`} placeholder="Login" disabled={!!editingUserId} value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/>
                             <div className="flex gap-2">
                                 <input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/>
                                 <select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Viewer</option><option value="admin">Admin</option><option value="master">Master</option></select>
                                 <button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">{editingUserId?'Atualizar':'Criar'}</button>
-                                {editingUserId && <button onClick={()=>{setEditingUserId(null); setNovoUsuario({nome:"",senha:"",role:"viewer"})}} className="p-2 bg-slate-300 rounded"><Icons.X/></button>}
+                                {editingUserId && <button onClick={()=>{setEditingUserId(null); setNovoUsuario({nome:"", senha:"", role:"viewer"})}} className="p-2 bg-slate-300 rounded"><Icons.X/></button>}
                             </div>
                         </div>
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2 text-right">Ações</th></tr></thead>
-                            <tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b hover:bg-slate-50"><td className="p-2 font-bold">{u.id}</td><td className="p-2 text-slate-500 font-mono">{u.senha}</td><td className="p-2 uppercase text-[10px] font-bold text-navy">{u.role}</td><td className="p-2 text-right flex justify-end gap-2"><button onClick={()=>editarUsuario(u)} className="text-blue-500"><Icons.Edit/></button><button onClick={()=>excluirUsuario(u.id)} className="text-red-400"><Icons.Trash/></button></td></tr>))}</tbody>
+                            <thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Role</th><th className="p-2 text-right">Ações</th></tr></thead>
+                            <tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2 text-right flex justify-end gap-2"><button onClick={()=>prepararEdicaoUsuario(u)} className="text-blue-500"><Icons.Edit/></button><button onClick={()=>excluirUsuario(u.id)} className="text-red-400"><Icons.Trash/></button></td></tr>))}</tbody>
                         </table>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-sm p-6 border">
+                        <h3 className="font-bold mb-4 flex gap-2"><Icons.Users/> Equipe</h3>
+                        <div className="flex gap-2 mb-4"><input className="flex-1 p-2 border rounded" placeholder="Nome" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/><button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Add</button></div>
+                        <ul className="divide-y">{listaEquipe.map((nome, i) => (<li key={i} className="p-3 flex justify-between bg-slate-50 items-center"><span>{nome}</span><button onClick={()=>removerMembroEquipe(nome)} className="text-red-400"><Icons.Trash/></button></li>))}</ul>
                     </div>
                  </div>
              )}
 
              {aba === 'processos' && (
-                 <div className="space-y-4 fade-in">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-slate-800">Processos Cadastrados</h2>
-                        {role !== 'viewer' && (
-                            <button onClick={()=>{setEditingId(null); setModal(true)}} className="bg-yellow-600 text-white px-6 py-2 rounded font-bold shadow-lg hover:bg-yellow-700 flex gap-2"><Icons.Plus/> NOVO PROCESSO</button>
-                        )}
-                    </div>
-                    <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 border-b text-slate-500 font-bold"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Processo</th><th className="px-4 py-3">Ramo</th><th className="px-4 py-3">Responsável</th><th className="px-4 py-3 text-center">Ações</th></tr></thead>
-                            <tbody className="divide-y">{processos.map(p => (
-                                <tr key={p.id} className="hover:bg-slate-50">
-                                    <td className="px-4 py-3 font-bold text-slate-700">{p.cliente}</td>
-                                    <td className="px-4 py-3 font-mono text-xs">{p.numeroProcesso || 'S/N'}</td>
-                                    <td className="px-4 py-3 text-slate-500">{p.ramo}</td>
-                                    <td className="px-4 py-3 font-medium">{p.advogado}</td>
-                                    <td className="px-4 py-3 flex justify-center gap-3">
-                                        <button onClick={()=>setFichaModal(p)} className="text-slate-400 hover:text-navy"><Icons.FileText/></button>
-                                        <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true)}} className="text-blue-400 hover:text-navy"><Icons.Edit/></button>
-                                        {role !== 'viewer' && <button onClick={async ()=>{if(confirm("Excluir?")) await db.collection(COL_PROCESSOS).doc(p.id).delete()}} className="text-red-200 hover:text-red-500"><Icons.Trash/></button>}
-                                    </td>
-                                </tr>
-                            ))}</tbody>
-                        </table>
-                    </div>
+                 <div className="bg-white rounded-xl shadow-sm border overflow-hidden fade-in">
+                     <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
+                         <div className="relative flex-1 w-full"><span className="absolute left-3 top-2.5 text-slate-400"><Icons.Search/></span><input type="text" placeholder="Buscar..." className="pl-9 pr-4 py-2 border rounded-lg text-sm w-full" value={busca} onChange={e => setBusca(e.target.value)} /></div>
+                         <div className="flex gap-2 w-full md:w-auto">
+                            <select className="px-4 py-2 border rounded-lg text-sm bg-white font-bold" value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}><option value="Todos">Todos Responsáveis</option>{listaEquipe.map(nome => <option key={nome} value={nome}>{nome}</option>)}</select>
+                            <button onClick={exportar} className="flex items-center gap-1 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-3 py-2 rounded"><Icons.Excel/> Excel</button>
+                         </div>
+                     </div>
+                     <div className="overflow-x-auto">
+                         <table className="w-full text-sm text-left">
+                             <thead className="bg-slate-100 font-bold border-b"><tr><th className="px-4 py-3">Status</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Processo</th><th className="px-4 py-3">Resp.</th><th className="px-4 py-3">Financeiro</th><th className="px-4 py-3 text-center">Ações</th></tr></thead>
+                             <tbody className="divide-y">
+                                 {processosFiltrados.map(p => (
+                                     <tr key={p.id} className="hover:bg-slate-50">
+                                         <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${p.statusProcessual==='Concluso'?'bg-green-100 text-green-700':'bg-blue-50 text-blue-700'}`}>{p.statusProcessual}</span></td>
+                                         <td className="px-4 py-3"><div className="font-bold flex items-center gap-2">{p.cliente} {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500"><Icons.WhatsApp/></button>}</div><div className="text-xs text-slate-400">{p.cidade}/{p.estado}</div></td>
+                                         <td className="px-4 py-3"><div className="font-mono text-xs">{p.numeroProcesso || 'S/N'}</div><div className="text-xs text-slate-400">{p.ramo}</div></td>
+                                         <td className="px-4 py-3">{p.advogado}</td>
+                                         <td className="px-4 py-3"><div className="text-xs">{p.valorContrato || '-'}</div><span className="text-[10px] font-bold uppercase">{p.statusPagamento}</span></td>
+                                         <td className="px-4 py-3 flex justify-center gap-2">
+                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy"><Icons.FileText/></button>
+                                             <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-500"><Icons.Edit/></button>
+                                             {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-red-300 hover:text-red-500"><Icons.Trash/></button>}
+                                         </td>
+                                     </tr>
+                                 ))}
+                             </tbody>
+                         </table>
+                     </div>
                  </div>
              )}
           </main>
 
           {modal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
-                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden">
-                    <div className="bg-navy p-4 flex justify-between items-center text-white"><h3 className="font-bold">CADASTRO DE PROCESSO</h3><button onClick={()=>setModal(false)}><Icons.X /></button></div>
-                    <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                        <input className="w-full p-2 border rounded font-bold" placeholder="Nome do Cliente" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/>
-                        <div className="grid grid-cols-2 gap-4">
-                            <input className="w-full p-2 border rounded" placeholder="Cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/>
-                            <select className="w-full p-2 border rounded" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-navy px-6 py-4 flex justify-between items-center text-white shrink-0"><h3 className="font-bold">{editingId ? 'EDITAR' : 'NOVO CADASTRO'}</h3><button onClick={()=>setModal(false)}><Icons.X /></button></div>
+                    <div className="p-6 overflow-y-auto custom-scrollbar space-y-5">
+                        <div className="space-y-3">
+                            <input className="w-full p-2 border rounded font-bold" placeholder="Cliente" value={formData.cliente} onChange={e=>setFormData({...formData, cliente: e.target.value})}/>
+                            <div className="grid grid-cols-2 gap-3">
+                                <input className="w-full p-2 border rounded" placeholder="CPF" value={formData.cpf} onChange={e=>setFormData({...formData, cpf: formatCPF(e.target.value)})}/>
+                                <input className="w-full p-2 border rounded" placeholder="Telefone" value={formData.telefone} onChange={e=>setFormData({...formData, telefone: formatPhone(e.target.value)})}/>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <input className="w-full p-2 border rounded" placeholder="Cidade" value={formData.cidade} onChange={e=>setFormData({...formData, cidade: e.target.value})}/>
+                                <select className="w-full p-2 border rounded" value={formData.estado} onChange={e=>setFormData({...formData, estado: e.target.value})}>{LISTA_ESTADOS.map(u => <option key={u}>{u}</option>)}</select>
+                            </div>
                         </div>
-                        <input className="w-full p-2 border rounded font-mono" placeholder="Nº Processo" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/>
-                        <select className="w-full p-2 border rounded" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(nome => <option key={nome}>{nome}</option>)}</select>
-                        <textarea className="w-full p-2 border rounded h-24" placeholder="Descrição do caso" value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea>
+                        <div className="bg-slate-50 p-4 rounded-xl border space-y-3">
+                            <select className="w-full p-2 border rounded font-bold" value={formData.ramo} onChange={e=>setFormData({...formData, ramo: e.target.value})}>{LISTA_RAMOS.map(r => <option key={r}>{r}</option>)}</select>
+                            {formData.ramo === 'Previdenciário' ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <input className="col-span-2 w-full p-2 border rounded" placeholder="Patologia" value={formData.patologia} onChange={e=>setFormData({...formData, patologia: e.target.value})}/>
+                                    <input className="w-full p-2 border rounded font-mono text-xs" placeholder="Login GOV" value={formData.govLogin} onChange={e=>setFormData({...formData, govLogin: e.target.value})}/>
+                                    <input className="w-full p-2 border rounded font-mono text-xs" placeholder="Senha GOV" value={formData.govSenha} onChange={e=>setFormData({...formData, govSenha: e.target.value})}/>
+                                </div>
+                            ) : (
+                                <input className="w-full p-2 border rounded font-mono" placeholder="Nº Processo" value={formData.numeroProcesso} onChange={e=>setFormData({...formData, numeroProcesso: e.target.value})}/>
+                            )}
+                            <select className="w-full p-2 border rounded" value={formData.advogado} onChange={e=>setFormData({...formData, advogado: e.target.value})}>{listaEquipe.map(n => <option key={n}>{n}</option>)}</select>
+                            <select className="w-full p-2 border rounded" value={formData.statusProcessual} onChange={e=>setFormData({...formData, statusProcessual: e.target.value})}><option>Em Andamento</option><option>Concluso</option><option>Arquivado</option></select>
+                        </div>
+                        <div className="bg-orange-50/50 p-4 rounded-xl border border-orange-100 space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <input className="w-full p-2 border rounded" placeholder="Valor R$" value={formData.valorContrato} onChange={e=>setFormData({...formData, valorContrato: e.target.value})}/>
+                                <select className="w-full p-2 border rounded" value={formData.statusPagamento} onChange={e=>setFormData({...formData, statusPagamento: e.target.value})}><option>Pendente</option><option>Pago</option><option>Parcelado</option></select>
+                            </div>
+                        </div>
+                        <textarea className="w-full p-2 border rounded h-20 text-sm" placeholder="Descrição..." value={formData.descricao} onChange={e=>setFormData({...formData, descricao: e.target.value})}></textarea>
+                        <div className="space-y-2">
+                            <input className="w-full p-2 border rounded text-xs text-blue-600 underline" placeholder="Link Procuração" value={formData.linkProcuracao} onChange={e=>setFormData({...formData, linkProcuracao: e.target.value})}/>
+                            <input className="w-full p-2 border rounded text-xs text-blue-600 underline" placeholder="Link Contrato" value={formData.linkContrato} onChange={e=>setFormData({...formData, linkContrato: e.target.value})}/>
+                        </div>
                     </div>
-                    <div className="p-4 bg-slate-50 border-t flex gap-2"><button onClick={()=>setModal(false)} className="flex-1 py-2 border rounded">Cancelar</button><button onClick={salvarProcesso} className="flex-1 py-2 bg-navy text-white font-bold rounded">Salvar</button></div>
+                    <div className="p-4 bg-slate-50 border-t flex gap-3 shrink-0"><button onClick={()=>setModal(false)} className="flex-1 py-3 border rounded-lg font-bold">CANCELAR</button><button onClick={salvar} className="flex-[2] py-3 bg-navy text-white font-bold rounded-lg shadow">SALVAR</button></div>
                 </div>
             </div>
           )}
