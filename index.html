@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NB Advocacia - Gestão Estratégica v9.0</title>
+  <title>NB Advocacia - Gestão Jurídica v11.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -12,11 +12,11 @@
   
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
   <script src="https://unpkg.com/lucide@latest"></script>
   
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -24,7 +24,7 @@
 
   <style>
     body { font-family: system-ui, -apple-system, sans-serif; background-color: #f8fafc; }
-    .fade-in { animation: fadeIn 0.4s ease-in-out; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     .bg-navy { background-color: #0f172a; }
@@ -35,7 +35,7 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Estilo de Impressão da Ficha */
+    /* Estilo de Impressão */
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
@@ -91,119 +91,62 @@
       Filter: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
       Briefcase: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
       FileText: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-      Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
+      Chart: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>,
+      LogOut: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
     };
 
     // --- COMPONENTES AUXILIARES ---
-    
-    // Gráfico Componente (Chart.js Wrapper)
     const ChartComponent = ({ type, data, options }) => {
-        const canvasRef = useRef(null);
-        const chartRef = useRef(null);
-        
+        const canvasRef = useRef(null); const chartRef = useRef(null);
         useEffect(() => {
             if (!canvasRef.current) return;
             if (chartRef.current) chartRef.current.destroy();
             chartRef.current = new Chart(canvasRef.current, { type, data, options });
             return () => { if (chartRef.current) chartRef.current.destroy(); };
         }, [data, type, options]);
-        
         return <canvas ref={canvasRef} />;
     };
 
-    // Modal Ficha
     const FichaModal = ({ p, onClose }) => {
         return (
             <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 overflow-y-auto print:p-0 print:bg-white print:static">
                 <div id="print-area" className="bg-white w-full max-w-3xl rounded-xl shadow-2xl p-8 relative min-h-[500px]">
                     <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 no-print"><Icons.X/></button>
-                    
-                    {/* CABEÇALHO DA FICHA */}
                     <div className="border-b-4 border-navy pb-4 mb-6 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1>
-                            <p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p>
-                        </div>
-                        <div className="text-right text-xs text-slate-500">
-                            <p>Ficha Gerada em: {new Date().toLocaleDateString()}</p>
-                            <p>ID: {p.id.slice(0,8)}</p>
-                        </div>
+                        <div><h1 className="text-2xl font-serif font-bold text-navy">NB ADVOCACIA</h1><p className="text-sm text-yellow-600 font-bold tracking-widest uppercase">Nascimento & Bomfim</p></div>
+                        <div className="text-right text-xs text-slate-500"><p>Ficha Gerada em: {new Date().toLocaleDateString()}</p><p>ID: {p.id.slice(0,8)}</p></div>
                     </div>
-
                     <div className="space-y-6">
-                        {/* SEÇÃO 1: CLIENTE */}
                         <div className="bg-slate-50 p-4 rounded border border-slate-200">
                             <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div>
-                                <div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div>
-                                <div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div>
-                                <div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
+                                <div><span className="font-bold text-slate-500 block text-xs">NOME COMPLETO</span> {p.cliente}</div><div><span className="font-bold text-slate-500 block text-xs">CPF</span> {p.cpf || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">TELEFONE</span> {p.telefone || '-'}</div><div><span className="font-bold text-slate-500 block text-xs">ENDEREÇO</span> {p.rua ? `${p.rua}, ${p.numero}, ${p.bairro} - ${p.cidade}/${p.estado}` : `${p.cidade}/${p.estado}`}</div>
                             </div>
                         </div>
-
-                        {/* SEÇÃO 2: PROCESSO */}
                         <div className="border border-slate-200 p-4 rounded">
                             <h3 className="text-sm font-bold text-navy uppercase border-b border-slate-300 pb-1 mb-2 flex gap-2 items-center"><Icons.Briefcase/> Dados do Processo</h3>
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div>
-                                <div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div>
-                                <div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div>
-                                <div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div>
-                                <div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
+                                <div><span className="font-bold text-slate-500 block text-xs">Nº PROCESSO</span> <span className="font-mono bg-yellow-50 px-1 rounded">{p.numeroProcesso || 'Não Distribuído'}</span></div><div><span className="font-bold text-slate-500 block text-xs">RAMO</span> {p.ramo}</div><div><span className="font-bold text-slate-500 block text-xs">PARTE CONTRÁRIA</span> {p.parteContraria} <span className="text-xs text-slate-400">({p.tipoParteContraria})</span></div><div><span className="font-bold text-slate-500 block text-xs">STATUS ATUAL</span> <span className="font-bold">{p.statusProcessual}</span></div><div className="col-span-2"><span className="font-bold text-slate-500 block text-xs">DESCRIÇÃO DO CASO</span> <p className="italic text-slate-600 mt-1">{p.descricao || 'Sem descrição.'}</p></div>
                             </div>
                         </div>
-
-                        {/* SEÇÃO 3: DETALHES ESPECÍFICOS E FINANCEIRO */}
                         <div className="grid grid-cols-2 gap-6">
-                            {p.ramo === 'Previdenciário' && (
-                                <div className="border border-blue-100 bg-blue-50/30 p-4 rounded">
-                                    <h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3>
-                                    <ul className="text-xs space-y-1">
-                                        <li><b>Benefício:</b> {p.patologia}</li>
-                                        <li><b>Login GOV:</b> {p.govLogin}</li>
-                                        <li><b>Senha GOV:</b> {p.govSenha}</li>
-                                        <li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li>
-                                    </ul>
-                                </div>
-                            )}
-                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded">
-                                <h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3>
-                                <div className="text-sm">
-                                    <p><span className="font-bold">Valor:</span> {p.valorContrato}</p>
-                                    <p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p>
-                                    <p><span className="font-bold">Status:</span> {p.statusPagamento}</p>
-                                </div>
-                            </div>
+                            {p.ramo === 'Previdenciário' && (<div className="border border-blue-100 bg-blue-50/30 p-4 rounded"><h3 className="text-xs font-bold text-blue-800 uppercase mb-2">Previdenciário</h3><ul className="text-xs space-y-1"><li><b>Benefício:</b> {p.patologia}</li><li><b>Login GOV:</b> {p.govLogin}</li><li><b>Senha GOV:</b> {p.govSenha}</li><li><b>Perícia:</b> {p.dataPericia ? new Date(p.dataPericia).toLocaleString() : '-'}</li></ul></div>)}
+                            <div className="border border-orange-100 bg-orange-50/30 p-4 rounded"><h3 className="text-xs font-bold text-orange-800 uppercase mb-2">Financeiro</h3><div className="text-sm"><p><span className="font-bold">Valor:</span> {p.valorContrato}</p><p><span className="font-bold">Forma:</span> {p.tipoPagamento}</p><p><span className="font-bold">Status:</span> {p.statusPagamento}</p></div></div>
                         </div>
                     </div>
-
-                    {/* RODAPÉ */}
-                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400">
-                        <p>Documento para uso interno e acompanhamento processual.</p>
-                        <p>NB Advocacia - Todos os direitos reservados.</p>
-                    </div>
-
-                    <div className="absolute bottom-8 right-8 no-print">
-                        <button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2">
-                            <Icons.Check/> IMPRIMIR / SALVAR PDF
-                        </button>
-                    </div>
+                    <div className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-400"><p>Documento para uso interno e acompanhamento processual.</p><p>NB Advocacia - Todos os direitos reservados.</p></div>
+                    <div className="absolute bottom-8 right-8 no-print"><button onClick={()=>window.print()} className="bg-navy text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex items-center gap-2"><Icons.Check/> IMPRIMIR / SALVAR PDF</button></div>
                 </div>
             </div>
         );
     };
 
-    // --- FUNÇÕES UTILS ---
+    // --- UTILS ---
     const formatCPF = (v) => v.replace(/\D/g, '').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
     const formatPhone = (v) => v.replace(/\D/g, '').replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    const openWhatsApp = (phone) => {
-        const clean = phone.replace(/\D/g, '');
-        if (clean) window.open(`https://wa.me/55${clean}`, '_blank');
-        else alert("Número inválido.");
-    };
+    const openWhatsApp = (phone) => { const clean = phone.replace(/\D/g, ''); if (clean) window.open(`https://wa.me/55${clean}`, '_blank'); else alert("Número inválido."); };
 
-    // --- CALCULADORA ---
+    // --- CALCULADORA (ESTILO PRAZO FÁCIL - IDÊNTICO) ---
     const CalculatorModal = ({ onClose }) => {
         const [dataInicial, setDataInicial] = useState("");
         const [dias, setDias] = useState("");
@@ -223,16 +166,48 @@
         };
 
         return (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                    <div className="bg-navy p-4 flex justify-between items-center text-white"><h3 className="font-bold flex gap-2"><Icons.Calculator/> Calculadora</h3><button onClick={onClose}><Icons.X/></button></div>
-                    <div className="p-6 space-y-4">
-                        <div><label className="text-xs font-bold text-slate-500">Publicação</label><input type="date" className="w-full p-2 border rounded" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/></div>
-                        <div><label className="text-xs font-bold text-slate-500">Dias</label><input type="number" className="w-full p-2 border rounded" value={dias} onChange={e=>setDias(e.target.value)}/></div>
-                        <div className="flex gap-4 justify-center"><label><input type="radio" name="t" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')}/> Úteis</label><label><input type="radio" name="t" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')}/> Corridos</label></div>
-                        <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2 rounded">CALCULAR</button>
-                        {resultado && <div className="bg-green-50 p-2 rounded text-center text-green-800 font-bold mt-2">{resultado}</div>}
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
+                <div className="bg-white rounded w-full max-w-lg overflow-hidden shadow-2xl p-8">
+                    {/* CABEÇALHO LIMPO COM BOTÃO DE FECHAR */}
+                    <div className="flex justify-between items-start mb-6">
+                        <div className="w-full">
+                            <h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira os dados para calcular o prazo</h3>
+                            <div className="border-b border-blue-100 w-1/2 mx-auto"></div>
+                        </div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-red-500 -mt-2 -mr-2"><Icons.X/></button>
                     </div>
+                    
+                    <div className="space-y-3">
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Pernambuco</option><option>Paraíba</option><option>São Paulo</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Recife</option><option>Goiana</option><option>Olinda</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Cível</option><option>Trabalhista</option><option>Penal</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>Processo de Conhecimento</option><option>Execução</option></select>
+                        <select className="w-full p-2 border border-slate-300 rounded bg-white text-slate-700 text-sm focus:outline-none focus:border-blue-500 shadow-sm"><option>TJPE</option><option>TRF5</option><option>TRT6</option></select>
+                    </div>
+
+                    <div className="mt-6 mb-2">
+                        <h3 className="text-center text-blue-900 font-bold text-sm tracking-wide mb-1">Insira a data da publicação</h3>
+                        <div className="border-b border-blue-100 w-1/2 mx-auto mb-4"></div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                         <input type="date" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" value={dataInicial} onChange={e=>setDataInicial(e.target.value)}/>
+                         <input type="number" className="w-full p-2 border border-slate-300 rounded text-center text-slate-700 shadow-sm focus:outline-none focus:border-blue-500" placeholder="Prazo em dias" value={dias} onChange={e=>setDias(e.target.value)}/>
+                    </div>
+
+                    <div className="flex justify-center gap-8 py-4">
+                         <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Úteis</span></label>
+                         <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="accent-blue-600 w-4 h-4"/> <span className="text-slate-700 text-sm font-medium">Corridos</span></label>
+                    </div>
+
+                    <button onClick={calcular} className="w-full bg-orange-600 text-white font-bold py-2.5 rounded shadow hover:bg-orange-700 transition duration-200">Calcular</button>
+                    
+                    {resultado && (
+                        <div className="bg-green-50 p-4 rounded-lg text-center border border-green-200 mt-4 animate-scale-up">
+                            <p className="text-xs text-green-700 font-bold uppercase tracking-widest">Prazo Final</p>
+                            <p className="text-3xl font-extrabold text-green-800 mt-1">{resultado}</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -246,12 +221,20 @@
 
       const handle = async (e) => {
         e.preventDefault();
-        if (user === "NB ADVOCACIA" && pass === "NB07242530") { onLogin(user, "master"); return; }
+        
+        // 1. TENTA NO BANCO (PRIORIDADE)
         try {
             const doc = await db.collection(COL_USUARIOS).doc(user).get();
-            if (doc.exists && doc.data().senha === pass) onLogin(user, doc.data().role || 'viewer');
-            else setError("Dados incorretos.");
-        } catch(e) { setError("Erro de conexão."); }
+            if (doc.exists && doc.data().senha === pass) {
+                onLogin(user, doc.data().role || 'viewer');
+                return;
+            }
+        } catch(e) { console.log("Verificando hardcode..."); }
+
+        // 2. FALLBACK HARDCODE (SE NÃO TIVER NO BANCO AINDA)
+        if (user === "NB ADVOCACIA" && pass === "NB07242530") { onLogin(user, "master"); return; }
+        
+        setError("Dados incorretos.");
       };
 
       return (
@@ -259,10 +242,10 @@
           <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 fade-in">
             <div className="text-center mb-6"><div className="text-yellow-600 flex justify-center mb-2"><Icons.Scale /></div><h2 className="text-2xl font-bold text-slate-800">NB ADVOCACIA</h2></div>
             <form onSubmit={handle} className="space-y-4">
-              <input className="w-full p-3 border rounded" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
-              <input type="password" className="w-full p-3 border rounded" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
+              <input className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Usuário" value={user} onChange={e => setUser(e.target.value)} />
+              <input type="password" className="w-full p-3 border rounded outline-none focus:border-yellow-600 focus:ring-1 focus:ring-yellow-600" placeholder="Senha" value={pass} onChange={e => setPass(e.target.value)} />
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-              <button className="w-full bg-navy text-white py-3 rounded font-bold">ENTRAR</button>
+              <button className="w-full bg-navy text-white py-3 rounded font-bold hover:bg-slate-800 transition">ENTRAR</button>
             </form>
           </div>
         </div>
@@ -277,18 +260,16 @@
       const [processos, setProcessos] = useState([]);
       const [busca, setBusca] = useState("");
       const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
-      const [aba, setAba] = useState('dashboard'); // Padrão agora é Dashboard
+      const [aba, setAba] = useState('dashboard');
 
       const [modal, setModal] = useState(false);
-      const [fichaModal, setFichaModal] = useState(null); // Estado para abrir a ficha
+      const [fichaModal, setFichaModal] = useState(null);
       const [calcModal, setCalcModal] = useState(false);
       const [editingId, setEditingId] = useState(null);
-      
       const [modalSenha, setModalSenha] = useState(false);
       const [novaSenha, setNovaSenha] = useState("");
       const [listaUsuarios, setListaUsuarios] = useState([]);
       const [novoUsuario, setNovoUsuario] = useState({ nome: "", senha: "", role: "viewer" });
-      
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoMembro, setNovoMembro] = useState("");
 
@@ -306,6 +287,7 @@
       const [formData, setFormData] = useState(initialForm);
 
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
+      const handleLogout = () => window.location.reload();
 
       useEffect(() => {
         if (!authOk) return;
@@ -324,22 +306,18 @@
         }
       }, [aba, role]);
 
-      // --- GRÁFICOS E METRICAS ---
       const stats = useMemo(() => {
           const total = processos.length;
           const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento').length;
           const conclusos = processos.filter(p => p.statusProcessual === 'Concluso').length;
-          
-          // Contagem por Ramo para o Gráfico
           const ramosCount = {};
           processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
-          
           return { total, ativos, conclusos, ramosCount };
       }, [processos]);
 
       const adicionarMembroEquipe = async () => { if (!novoMembro) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: [...listaEquipe, novoMembro] }); setNovoMembro(""); };
       const removerMembroEquipe = async (nome) => { if(!confirm("Remover?")) return; await db.collection(COL_PROFISSIONAIS).doc('lista_atual').set({ nomes: listaEquipe.filter(n => n !== nome) }); };
-      const alterarSenha = async () => { if (!novaSenha || novaSenha.length < 4) return alert("Senha curta."); await db.collection(COL_USUARIOS).doc(user).set({ senha: novaSenha }, { merge: true }); alert("Senha alterada!"); setModalSenha(false); setNovaSenha(""); };
+      const alterarSenha = async () => { if (!novaSenha || novaSenha.length < 4) return alert("Senha curta."); await db.collection(COL_USUARIOS).doc(user).set({ senha: novaSenha, role: role }, { merge: true }); alert("Senha alterada!"); setModalSenha(false); setNovaSenha(""); };
       const salvarUsuario = async () => { if (!novoUsuario.nome || !novoUsuario.senha) return alert("Preencha tudo."); await db.collection(COL_USUARIOS).doc(novoUsuario.nome).set({ senha: novoUsuario.senha, role: novoUsuario.role }); alert("Salvo!"); setNovoUsuario({nome: "", senha: "", role: "viewer"}); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
       const excluirUsuario = async (id) => { if (!confirm("Remover?")) return; await db.collection(COL_USUARIOS).doc(id).delete(); const snap = await db.collection(COL_USUARIOS).get(); setListaUsuarios(snap.docs.map(d => ({id: d.id, ...d.data()}))); };
       const salvar = async () => { if (!formData.cliente) return alert("Nome do cliente obrigatório."); try { if (editingId) await db.collection(COL_PROCESSOS).doc(editingId).update(formData); else await db.collection(COL_PROCESSOS).add({...formData, criadoEm: new Date().toISOString()}); setModal(false); setEditingId(null); setFormData(initialForm); } catch (e) { alert("Erro ao salvar."); } };
@@ -362,11 +340,21 @@
                  <div><h1 className="text-xl font-bold text-slate-900 font-serif leading-none">NB ADVOCACIA</h1><span className="text-xs font-bold text-slate-400 tracking-widest uppercase">{role === 'master' ? 'Painel Mestre' : `Dr(a). ${user}`}</span></div>
              </div>
              <div className="flex gap-2 items-center">
-                 <button onClick={()=>setAba('dashboard')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
+                 <button onClick={()=>setAba('dashboard')} className={`hidden md:flex px-3 py-2 rounded text-sm font-bold items-center gap-2 border ${aba==='dashboard'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Chart/> Dash</button>
                  <button onClick={()=>setAba('processos')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='processos'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}>Processos</button>
                  <button onClick={()=>setCalcModal(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Calculator/> Calc</button>
-                 {role === 'master' ? (<button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>) : (<button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200"><Icons.Key/> Senha</button>)}
+                 
+                 {/* BOTÃO EQUIPE (SÓ MESTRE) */}
+                 {role === 'master' && (<button onClick={()=>setAba('equipe')} className={`px-3 py-2 rounded text-sm font-bold flex gap-2 items-center border ${aba==='equipe'?'bg-navy text-white':'text-slate-600 bg-slate-100 hover:bg-slate-200'}`}><Icons.Users/> Equipe</button>)}
+                 
+                 {/* BOTÃO SENHA (PARA TODOS) */}
+                 <button onClick={()=>setModalSenha(true)} className="px-3 py-2 rounded text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center gap-2 border border-slate-200" title="Alterar Senha"><Icons.Key/></button>
+                 
+                 {/* BOTÃO NOVO (ADMIN/MASTER) */}
                  {(role !== 'viewer') && (<button onClick={()=>{setFormData(initialForm); setEditingId(null); setModal(true);}} className="bg-yellow-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-yellow-700 flex gap-2 items-center shadow transition-colors"><Icons.Plus/> NOVO</button>)}
+                 
+                 {/* BOTÃO SAIR */}
+                 <button onClick={handleLogout} className="p-2 text-red-400 hover:text-red-600 border border-red-100 rounded bg-red-50 hover:bg-red-100 transition" title="Sair do Sistema"><Icons.LogOut/></button>
              </div>
           </header>
 
@@ -374,40 +362,30 @@
              {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
              {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
 
-             {/* ABA DASHBOARD (GRÁFICOS) */}
+             {/* DASHBOARD */}
              {aba === 'dashboard' && (
                  <div className="space-y-6 fade-in">
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3 className="text-xs font-bold text-slate-500 uppercase">Total de Processos</h3><p className="text-3xl font-bold text-slate-800">{stats.total}</p></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-navy"><h3 className="text-xs font-bold text-slate-500 uppercase">Total</h3><p className="text-3xl font-bold text-slate-800">{stats.total}</p></div>
                          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Em Andamento</h3><p className="text-3xl font-bold text-blue-600">{stats.ativos}</p></div>
                          <div className="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-xs font-bold text-slate-500 uppercase">Conclusos</h3><p className="text-3xl font-bold text-green-600">{stats.conclusos}</p></div>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="bg-white p-6 rounded-xl shadow-sm h-80">
-                             <h4 className="font-bold text-slate-700 mb-4">Áreas de Atuação (Onde investir?)</h4>
-                             <div className="h-60 flex justify-center">
-                                 <ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} />
-                             </div>
-                         </div>
-                         <div className="bg-white p-6 rounded-xl shadow-sm h-80">
-                             <h4 className="font-bold text-slate-700 mb-4">Volume de Processos</h4>
-                             <div className="h-60">
-                                 <ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }} />
-                             </div>
-                         </div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Áreas de Atuação</h4><div className="h-60 flex justify-center"><ChartComponent type="doughnut" data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a', '#ca8a04', '#2563eb', '#16a34a', '#dc2626', '#9333ea'], borderWidth: 0 }] }} options={{ responsive: true, maintainAspectRatio: false }} /></div></div>
+                         <div className="bg-white p-6 rounded-xl shadow-sm h-80"><h4 className="font-bold text-slate-700 mb-4">Volume</h4><div className="h-60"><ChartComponent type="bar" data={{ labels: ['Ativos', 'Conclusos'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos], backgroundColor: ['#2563eb', '#16a34a'] }] }} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }} /></div></div>
                      </div>
                  </div>
              )}
 
-             {/* ABA EQUIPE (SÓ MESTRE) */}
+             {/* EQUIPE (MASTER) */}
              {aba === 'equipe' && role === 'master' && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
-                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3><div className="bg-slate-50 p-4 rounded border mb-4 space-y-2"><input className="w-full p-2 border rounded" placeholder="Nome" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/><div className="flex gap-2"><input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/><select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select><button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button></div></div><table className="w-full text-sm text-left"><thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead><tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>))}</tbody></table></div>
+                    <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Key/> Acesso ao Sistema</h3><div className="bg-slate-50 p-4 rounded border mb-4 space-y-2"><input className="w-full p-2 border rounded" placeholder="Nome (Login)" value={novoUsuario.nome} onChange={e=>setNovoUsuario({...novoUsuario, nome: e.target.value})}/><div className="flex gap-2"><input className="flex-1 p-2 border rounded" placeholder="Senha" value={novoUsuario.senha} onChange={e=>setNovoUsuario({...novoUsuario, senha: e.target.value})}/><select className="p-2 border rounded bg-white" value={novoUsuario.role} onChange={e=>setNovoUsuario({...novoUsuario, role: e.target.value})}><option value="viewer">Visualizador</option><option value="admin">Admin</option></select><button onClick={salvarUsuario} className="bg-navy text-white px-4 rounded font-bold">Salvar</button></div></div><table className="w-full text-sm text-left"><thead className="bg-slate-100 border-b"><tr><th className="p-2">Usuário</th><th className="p-2">Senha</th><th className="p-2">Role</th><th className="p-2"></th></tr></thead><tbody>{listaUsuarios.map(u => (<tr key={u.id} className="border-b"><td className="p-2 font-bold">{u.id}</td><td className="p-2 font-mono text-slate-500">{u.senha}</td><td className="p-2 uppercase text-xs">{u.role}</td><td className="p-2"><button onClick={()=>excluirUsuario(u.id)} className="text-red-500"><Icons.Trash/></button></td></tr>))}</tbody></table></div>
                     <div className="bg-white rounded-xl shadow-sm p-6"><h3 className="font-bold text-slate-700 mb-4 flex gap-2"><Icons.Users/> Corpo Jurídico</h3><div className="flex gap-2 mb-4"><input className="flex-1 p-2 border rounded" placeholder="Nome Completo" value={novoMembro} onChange={e=>setNovoMembro(e.target.value)}/><button onClick={adicionarMembroEquipe} className="bg-green-600 text-white px-4 rounded font-bold">Adicionar</button></div><ul className="divide-y border rounded">{listaEquipe.map((nome, i) => (<li key={i} className="p-3 flex justify-between items-center bg-slate-50"><span className="font-bold text-slate-700">{nome}</span><button onClick={()=>removerMembroEquipe(nome)} className="text-red-400 hover:text-red-600"><Icons.Trash/></button></li>))}</ul></div>
                  </div>
              )}
 
-             {/* ABA PROCESSOS */}
+             {/* PROCESSOS */}
              {aba === 'processos' && (
                  <div className="bg-white rounded-xl shadow-sm overflow-hidden fade-in">
                      <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -427,7 +405,7 @@
                                          <td className="px-4 py-3 text-red-600 font-bold">{p.prazo ? new Date(p.prazo).toLocaleDateString() : '-'}</td>
                                          <td className="px-4 py-3"><div className="text-xs">{p.valorContrato || '0,00'}</div><span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span></td>
                                          <td className="px-4 py-3 text-center flex justify-center gap-2">
-                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy" title="Ver Ficha"><Icons.FileText/></button>
+                                             <button onClick={()=>setFichaModal(p)} className="text-slate-500 hover:text-navy" title="Ficha"><Icons.FileText/></button>
                                              <button onClick={()=>{setFormData(p); setEditingId(p.id); setModal(true);}} className="text-blue-400 hover:text-navy" title="Editar"><Icons.Edit/></button>
                                              {role !== 'viewer' && <button onClick={()=>apagar(p.id)} className="text-slate-300 hover:text-red-500" title="Excluir"><Icons.Trash/></button>}
                                          </td>
@@ -440,10 +418,8 @@
              )}
           </main>
 
-          {/* MODAL SENHA */}
           {modalSenha && (<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 fade-in"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6"><h3 className="font-bold text-lg text-slate-800 mb-4 flex gap-2 items-center"><Icons.Key/> Alterar Minha Senha</h3><input type="password" placeholder="Nova Senha" className="w-full p-2 border rounded mb-4" value={novaSenha} onChange={e=>setNovaSenha(e.target.value)}/><div className="flex gap-2"><button onClick={()=>setModalSenha(false)} className="flex-1 py-2 border rounded hover:bg-slate-50">Cancelar</button><button onClick={alterarSenha} className="flex-1 py-2 bg-navy text-white rounded font-bold hover:bg-slate-800">Salvar</button></div></div></div>)}
 
-          {/* MODAL FORMULÁRIO */}
           {modal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 fade-in">
                 <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
