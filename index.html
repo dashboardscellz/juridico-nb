@@ -363,7 +363,7 @@
             </div>
             <div className="overflow-y-auto custom-scrollbar flex-1 bg-white">
               {loading ? <div className="p-8 text-center text-slate-400 text-sm">Carregando registros...</div> : (
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left table-fixed">
                   <thead className="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider sticky top-0 z-10 border-b">
                     <tr><th className="px-6 py-3">Evento</th><th className="px-6 py-3">Usuário</th><th className="px-6 py-3">Perfil</th><th className="px-6 py-3">Data/Hora</th></tr>
                   </thead>
@@ -1026,7 +1026,7 @@
             </div>
           </header>
 
-          <main className="max-w-7xl mx-auto px-4 md:px-8 py-10">
+          <main className="w-full px-4 md:px-6 py-8">
             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
             {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
@@ -1101,7 +1101,7 @@
                     </div>
                   )}
                   <div className="overflow-hidden rounded-xl border border-slate-100">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-sm text-left table-fixed">
                       <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                         <tr><th className="p-4">Usuário</th><th className="p-4">Senha</th><th className="p-4">Perfil</th>{role==='master'&&<th className="p-4 text-right">Ações</th>}</tr>
                       </thead>
@@ -1176,17 +1176,26 @@
                     <button onClick={exportar} className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2.5 rounded-xl hover:bg-green-100 transition"><div className="w-4 h-4"><Icons.Excel/></div> Excel</button>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left whitespace-nowrap">
+                <div>
+                  <table className="w-full text-sm text-left table-fixed">
+                    <colgroup>
+                      <col style={{width:'12%'}}/>
+                      <col style={{width:'22%'}}/>
+                      <col style={{width:'20%'}}/>
+                      <col style={{width:'12%'}}/>
+                      <col style={{width:'12%'}}/>
+                      <col style={{width:'13%'}}/>
+                      <col style={{width:'9%'}}/>
+                    </colgroup>
                     <thead className="bg-slate-50/50 text-slate-500 font-semibold border-b border-slate-100 text-xs uppercase tracking-wider">
                       <tr>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4">Cliente / Local</th>
-                        <th className="px-6 py-4">Processo / Ramo</th>
-                        <th className="px-6 py-4">Responsável</th>
-                        <th className="px-6 py-4">Prazo</th>
-                        <th className="px-6 py-4">Financeiro</th>
-                        <th className="px-6 py-4 text-center">Ações</th>
+                        <th className="px-3 py-3">Status</th>
+                        <th className="px-3 py-3">Cliente / Local</th>
+                        <th className="px-3 py-3">Processo / Ramo</th>
+                        <th className="px-3 py-3">Responsável</th>
+                        <th className="px-3 py-3">Prazo</th>
+                        <th className="px-3 py-3">Financeiro</th>
+                        <th className="px-3 py-3 text-center">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -1207,11 +1216,11 @@
                         const prazoVencido = p.prazo && new Date(p.prazo) < hoje;
                         return (
                           <tr key={p.id} className="hover:bg-blue-50/30 transition duration-150 group">
-                            <td className="px-6 py-4">
-                              <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${stColor}`}>{st}</span>
+                            <td className="px-3 py-3">
+                              <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase leading-tight border whitespace-normal text-center block ${stColor}`}>{st}</span>
                             </td>
-                            <td className="px-6 py-4">
-                              <div className="font-bold text-[#0f172a] text-base flex items-center gap-2 mb-0.5">
+                            <td className="px-3 py-3">
+                              <div className="font-bold text-[#0f172a] text-sm flex items-center gap-2 mb-0.5 flex-wrap">
                                 {p.cliente}
                                 {p.telefone && <button onClick={()=>openWhatsApp(p.telefone)} className="text-green-500 hover:scale-110 transition bg-green-50 rounded-full p-1"><div className="w-3 h-3"><Icons.WhatsApp/></div></button>}
                               </div>
@@ -1221,28 +1230,28 @@
                                 {[p.cidade, p.estado?.split('–')[0]?.trim()].filter(Boolean).join(' · ')}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-3">
                               <div className="text-slate-700 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded inline-block mb-1">{p.semProcesso ? 'PRÉ-PROCESSUAL' : (p.numeroProcesso || 'S/N')}</div>
                               <div><span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${chip}`}>{p.ramo}</span></div>
                               {p.tribunal && <div className="text-[10px] text-slate-400 mt-0.5">{p.tribunal.split('(')[0].trim()}{p.vara ? ` · ${p.vara}` : ''}</div>}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-3">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-full bg-slate-200 text-[10px] flex items-center justify-center font-bold text-slate-500">{(p.advogado||'?').charAt(0)}</div>
                                 <span className="text-slate-600 font-medium text-xs">{(p.advogado||'-').split(' ')[0]}...</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-3">
                               <div className={`text-xs font-bold px-2 py-1 rounded inline-flex items-center gap-1 ${p.prazo ? (prazoVencido ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-red-50 text-red-600 border border-red-100') : 'text-slate-400'}`}>
                                 <div className="w-3 h-3"><Icons.Clock/></div>
                                 {p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '-'}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 py-3">
                               <div className="text-sm font-semibold text-slate-700">{renderFin(p)}</div>
                               <span className={`text-[10px] font-bold uppercase ${p.statusPagamento==='Pago'?'text-green-600':'text-orange-500'}`}>{p.statusPagamento}</span>
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-3 py-3 text-center">
                               <div className="flex justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                                 <button onClick={()=>setFichaModal(p)} className="p-2 text-slate-500 hover:text-[#0f172a] hover:bg-white rounded-lg border border-transparent hover:border-slate-200 shadow-sm transition" title="Ver Ficha"><div className="w-4 h-4"><Icons.FileText/></div></button>
                                 {role !== 'viewer' && <button onClick={()=>{setFormData({...initialForm,...p}); setEditingId(p.id); setModal(true);}} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-white rounded-lg border border-transparent hover:border-blue-100 shadow-sm transition" title="Editar"><div className="w-4 h-4"><Icons.Edit/></div></button>}
