@@ -9,15 +9,16 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" as="style">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@0,700&display=swap&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -41,7 +42,7 @@
     .font-serif { font-family: 'Playfair Display', serif; }
     .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .glass-header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(0,0,0,0.05); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -75,7 +76,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+    const { useState, useEffect, useMemo, useRef } = React;
 
     // ─── FIREBASE ───────────────────────────────────────────────
     const firebaseConfig = {
@@ -103,7 +104,6 @@
       { valor: "Cível",             chip: "chip-civel"       },
       { valor: "Previdenciário",    chip: "chip-previdencia" },
       { valor: "Trabalhista",       chip: "chip-trabalhista" },
-      { valor: "Penal",             chip: "chip-criminal"    },
       { valor: "Criminal",          chip: "chip-criminal"    },
       { valor: "Família e Sucessões",chip: "chip-familia"    },
       { valor: "Família",           chip: "chip-familia"     },
@@ -123,28 +123,93 @@
     const LISTA_RAMOS = MATERIAS.map(m => m.valor);
 
     // ─── STATUS PROCESSUAL AGRUPADO (novo) ─────────────────────
-    const STATUS_GRUPOS = [
-      { grupo: "📋 Fase Inicial", itens: [
-        "Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"
-      ]},
-      { grupo: "⚖️ Fase de Conhecimento", itens: [
-        "Em Andamento","Em contestação","Em fase de instrução",
-        "Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"
-      ]},
-      { grupo: "🔍 Criminal / Investigativo", itens: [
-        "Em inquérito policial","Em habeas corpus","Em liberdade provisória",
-        "Em prisão preventiva","Em sursis processual"
-      ]},
-      { grupo: "📣 Recursos", itens: [
-        "Em recurso","Em apelação","Em agravo de instrumento",
-        "Em embargos de declaração","Em mandado de segurança"
-      ]},
-      { grupo: "✅ Cumprimento / Execução", itens: [
-        "Transitado em julgado","Em cumprimento de sentença",
-        "Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"
-      ]},
+    // Status por área de atuação — cada ramo exibe apenas o que faz sentido
+    const STATUS_POR_RAMO = {
+      "Cível": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração","Em mandado de segurança"] },
+        { grupo: "✅ Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Previdenciário": [
+        { grupo: "📋 Fase Administrativa", itens: ["Em análise no INSS","Recurso administrativo","Aguardando perícia médica","Em avaliação social","Benefício concedido administrativamente","Benefício indeferido – aguardando recurso"] },
+        { grupo: "📋 Fase Judicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
+        { grupo: "✅ Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Benefício implantado","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Trabalhista": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Audiência de conciliação designada","Audiência de instrução designada","Em fase de instrução","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso ordinário","Em recurso de revista","Em agravo de instrumento","Em embargos de declaração","Em embargos de divergência"] },
+        { grupo: "✅ Execução", itens: ["Transitado em julgado","Em liquidação de sentença","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Criminal": [
+        { grupo: "🔍 Investigação", itens: ["Em inquérito policial","Investigado – sem indiciamento","Indiciado","Aguardando denúncia do MP"] },
+        { grupo: "⚖️ Processo Criminal", itens: ["Em Andamento","Denúncia recebida","Citado – aguardando defesa","Em fase de instrução","Audiência designada","Concluso para sentença"] },
+        { grupo: "🔓 Liberdade", itens: ["Em liberdade provisória","Em liberdade condicional","Em sursis processual","Em prisão preventiva","Em prisão domiciliar","Em habeas corpus"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em embargos de declaração","Em revisão criminal","Em habeas corpus (recursal)"] },
+        { grupo: "✅ Cumprimento de Pena", itens: ["Transitado em julgado","Em cumprimento de pena","Em progressão de regime","Em livramento condicional","Pena extinta"] },
+        { grupo: "🗂️ Encerrado", itens: ["Absolvido","Arquivado","Suspenso","Cancelado","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+      ],
+      "Família e Sucessões": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de mediação","Audiência de conciliação designada","Audiência de instrução designada","Em fase de instrução","Aguardando laudo pericial","Em perícia psicossocial","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
+        { grupo: "✅ Execução / Cumprimento", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Partilha em andamento","Inventário em andamento","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Família": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de mediação","Audiência de conciliação designada","Audiência de instrução designada","Em fase de instrução","Aguardando laudo pericial","Em perícia psicossocial","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
+        { grupo: "✅ Execução / Cumprimento", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Partilha em andamento","Inventário em andamento","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Tributário": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em exceção de pré-executividade","Em fase de instrução","Aguardando laudo pericial","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração","Em mandado de segurança","Em ação anulatória"] },
+        { grupo: "✅ Execução Fiscal", itens: ["Transitado em julgado","Em execução fiscal","Em parcelamento","Em penhora","Em acordo","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Administrativo": [
+        { grupo: "📋 Fase Administrativa", itens: ["Em processo administrativo","Em recurso administrativo","Aguardando decisão administrativa"] },
+        { grupo: "📋 Fase Judicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em mandado de segurança","Em ação popular"] },
+        { grupo: "✅ Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Empresarial": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Aguardando laudo pericial","Em perícia contábil","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
+        { grupo: "✅ Execução / Recuperação", itens: ["Transitado em julgado","Em cumprimento de sentença","Em recuperação judicial","Em falência","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+      "Consumidor": [
+        { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+        { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência de conciliação designada","Audiência de instrução designada","Aguardando laudo pericial","Concluso para sentença"] },
+        { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
+        { grupo: "✅ Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      ],
+    };
+
+    // Fallback genérico para ramos sem mapeamento específico
+    const STATUS_GENERICO = [
+      { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação","Citado – aguardando prazo"] },
+      { grupo: "⚖️ Instrução", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
+      { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração","Em mandado de segurança"] },
+      { grupo: "✅ Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
       { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
     ];
+
+    const getStatusPorRamo = ramo => STATUS_POR_RAMO[ramo] || STATUS_GENERICO;
 
     // ─── TRIBUNAIS AGRUPADOS (novo) ────────────────────────────
     const TRIBUNAIS = [
@@ -806,7 +871,7 @@
         tribunal: "PJE-PE (TJ-PE)", vara: "",
         patologia: "", govLogin: "", govSenha: "",
         dataEntrada: "", statusBeneficio: "Em Análise", dataPericia: "", dataSocial: "",
-        procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "",
+        
         tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", valorContrato: "",
         percentualContrato: "", valorEntrada: "", statusPagamento: "Pendente"
       };
@@ -1316,7 +1381,7 @@
                     <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
                       <div className="flex flex-col md:flex-row items-start md:items-center gap-3 mb-4">
                         <label className="text-xs font-bold text-[#0f172a] uppercase tracking-wider shrink-0">Área de Atuação:</label>
-                        <select className="w-full md:w-auto px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-bold text-[#0f172a] bg-white outline-none focus:border-yellow-500" value={formData.ramo} onChange={e=>setF({ramo: e.target.value})}>
+                        <select className="w-full md:w-auto px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-bold text-[#0f172a] bg-white outline-none focus:border-yellow-500" value={formData.ramo} onChange={e=>{const novoRamo=e.target.value; const primeiroStatus=getStatusPorRamo(novoRamo)[0]?.itens[0]||'Em Andamento'; setF({ramo:novoRamo, statusProcessual:primeiroStatus});}}>
                           {MATERIAS.map(m => <option key={m.valor} value={m.valor}>{m.valor}</option>)}
                         </select>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getChip(formData.ramo)}`}>{formData.ramo}</span>
@@ -1357,11 +1422,11 @@
                         )}
                       </div>
 
-                      {/* Status Processual agrupado */}
+                      {/* Status Processual — dinâmico por área de atuação */}
                       <div className="mt-3">
                         <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Status Processual</label>
                         <select className="w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm font-medium text-[#0f172a] outline-none" value={formData.statusProcessual} onChange={e=>setF({statusProcessual: e.target.value})}>
-                          {STATUS_GRUPOS.map(g => (
+                          {getStatusPorRamo(formData.ramo).map(g => (
                             <optgroup key={g.grupo} label={g.grupo}>
                               {g.itens.map(s => <option key={s} value={s}>{s}</option>)}
                             </optgroup>
@@ -1406,23 +1471,9 @@
                     </div>
                   </div>
 
-                  {/* SEÇÃO 3: ANEXOS & FINANCEIRO */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 h-full">
-                      <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><Icons.Briefcase/> Links / Anexos</h4>
-                      <div className="space-y-3">
-                        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2"><input type="checkbox" className="accent-green-600 w-4 h-4" checked={formData.procuracaoEntregue} onChange={e=>setF({procuracaoEntregue: e.target.checked})}/><span className="text-xs font-bold text-[#0f172a]">Procuração</span></div>
-                          <input className="w-full p-1.5 border-b border-slate-200 text-xs bg-transparent text-blue-600 placeholder-slate-400 outline-none" placeholder="Cole o link do drive..." value={formData.linkProcuracao} onChange={e=>setF({linkProcuracao: e.target.value})}/>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2"><input type="checkbox" className="accent-green-600 w-4 h-4" checked={formData.contratoEntregue} onChange={e=>setF({contratoEntregue: e.target.checked})}/><span className="text-xs font-bold text-[#0f172a]">Contrato</span></div>
-                          <input className="w-full p-1.5 border-b border-slate-200 text-xs bg-transparent text-blue-600 placeholder-slate-400 outline-none" placeholder="Cole o link do drive..." value={formData.linkContrato} onChange={e=>setF({linkContrato: e.target.value})}/>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-yellow-50/50 p-5 rounded-xl border border-yellow-100 h-full">
+                  {/* SEÇÃO 3: HONORÁRIOS */}
+                  <div>
+                    <div className="bg-yellow-50/50 p-5 rounded-xl border border-yellow-100">
                       <h4 className="text-xs font-bold text-yellow-700 uppercase mb-3 flex items-center gap-2"><Icons.Chart/> Honorários</h4>
                       <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-3">
@@ -1459,7 +1510,6 @@
                         )}
                       </div>
                     </div>
-                  </div>
                 </div>
 
                 <div className="bg-white p-5 border-t border-slate-100 flex gap-4 shrink-0">
