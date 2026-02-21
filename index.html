@@ -496,7 +496,8 @@
     //  AGENDA DIÁRIA (nova funcionalidade do INDEX, design harmonizado)
     // ════════════════════════════════════════════════════════════
     const AgendaDiaria = ({ usuario }) => {
-      const hoje = new Date().toISOString().split('T')[0];
+      const _agora = new Date();
+      const hoje = `${_agora.getFullYear()}-${String(_agora.getMonth()+1).padStart(2,'0')}-${String(_agora.getDate()).padStart(2,'0')}`;
       const [dataSel, setDataSel]   = useState(hoje);
       const [tarefas, setTarefas]   = useState([]);
       const [notas, setNotas]       = useState("");
