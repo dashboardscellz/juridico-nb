@@ -449,8 +449,11 @@
     );
 
     // ════════════════════════════════════════════════════════════
-    //  CALCULADORA DE PRAZOS (design GUIA + funcionalidades INDEX)
+    //  CALCULADORA DE PRAZOS — novo layout
     // ════════════════════════════════════════════════════════════
+    const MATERIAS_CALC = ["Cível","Criminal","Trabalhista","Previdenciário","Família e Sucessões","Tributário","Administrativo","Empresarial","Consumidor","Imobiliário","Outros"];
+    const TRIBUNAIS_CALC = ["PJE-PE (TJ-PE)","PJE-PB (TJ-PB)","PJE-AL (TJ-AL)","PJE-BA (TJ-BA)","PJE-CE (TJ-CE)","PJE-RN (TJ-RN)","E-PROC (TRF1)","PJE-JF (TRF5)","PJE-TRT6 (PE)","STJ","STF","TST","Outro"];
+
     const CalculatorModal = ({ onClose }) => {
       const [dataInicial, setDataInicial] = useState("");
       const [dias, setDias] = useState("");
@@ -458,6 +461,9 @@
       const [resultado, setResultado] = useState(null);
       const [calcEstado, setCalcEstado] = useState("PE – Pernambuco");
       const [calcCidade, setCalcCidade] = useState("Recife");
+      const [calcMateria, setCalcMateria] = useState("Cível");
+      const [calcProcesso, setCalcProcesso] = useState("Eletrônico");
+      const [calcTribunal, setCalcTribunal] = useState("PJE-PE (TJ-PE)");
 
       useEffect(() => {
         const cidades = ESTADOS_CIDADES[calcEstado];
@@ -476,50 +482,111 @@
         setResultado(dt.toLocaleDateString('pt-BR'));
       };
 
+      const selectCls = "w-full p-2.5 border border-slate-200 rounded-lg bg-white text-sm text-slate-700 outline-none focus:border-yellow-500 transition appearance-none cursor-pointer hover:bg-slate-50";
+
       return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 fade-in">
-          <div className="bg-white rounded-xl w-full max-w-lg overflow-hidden shadow-2xl p-8 max-h-[90vh] overflow-y-auto relative">
-            <button onClick={onClose} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition"><Icons.X/></button>
-            <div className="text-center mb-8">
-              <div className="inline-block p-3 bg-blue-50 rounded-full text-blue-600 mb-3 shadow-sm"><Icons.Calculator/></div>
-              <h3 className="text-2xl font-serif font-bold text-[#0f172a]">Calculadora de Prazos</h3>
-              <p className="text-slate-500 text-sm mt-1">Ferramenta auxiliar para contagem processual</p>
-            </div>
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl max-h-[95vh] overflow-y-auto relative">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#0f172a] to-[#1e3a5f] px-6 py-5 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-400"><Icons.Calculator/></div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Estado</label>
-                  <select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm outline-none transition" value={calcEstado} onChange={e => setCalcEstado(e.target.value)}>
-                    {Object.keys(ESTADOS_CIDADES).map(uf => <option key={uf} value={uf}>{uf}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Comarca</label>
-                  <select className="w-full p-2.5 border border-slate-200 rounded-lg bg-slate-50 text-sm outline-none transition" value={calcCidade} onChange={e => setCalcCidade(e.target.value)}>
-                    {(ESTADOS_CIDADES[calcEstado]||[]).map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <h3 className="text-white font-bold text-base font-serif">Calculadora de Prazos</h3>
+                  <p className="text-slate-400 text-[10px] uppercase tracking-widest">Contagem processual</p>
                 </div>
               </div>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <label className="text-[10px] font-bold text-blue-600 uppercase mb-3 block text-center tracking-widest">Parâmetros do Prazo</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Data Publicação</label><input type="date" className="w-full p-2 border border-slate-200 rounded text-center text-sm outline-none" value={dataInicial} onChange={e => setDataInicial(e.target.value)}/></div>
-                  <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Dias</label><input type="number" className="w-full p-2 border border-slate-200 rounded text-center text-sm outline-none" placeholder="Ex: 15" value={dias} onChange={e => setDias(e.target.value)}/></div>
-                </div>
-                <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-slate-200">
-                  <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='uteis'} onChange={()=>setTipo('uteis')} className="w-4 h-4 cursor-pointer"/><span className="text-slate-600 text-sm font-medium">Dias Úteis</span></label>
-                  <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipo" checked={tipo==='corridos'} onChange={()=>setTipo('corridos')} className="w-4 h-4 cursor-pointer"/><span className="text-slate-600 text-sm font-medium">Dias Corridos</span></label>
-                </div>
-              </div>
+              <button onClick={onClose} className="text-slate-400 hover:text-red-400 transition p-1"><Icons.X/></button>
             </div>
-            <button onClick={calcular} className="w-full bg-gradient-to-r from-[#0f172a] to-[#1e293b] text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition duration-300 mt-6 text-sm tracking-wide">CALCULAR PRAZO FINAL</button>
-            {resultado && (
-              <div className="bg-green-50 p-5 rounded-xl text-center border border-green-200 mt-6 shadow-sm fade-in">
-                <p className="text-xs text-green-700 font-bold uppercase tracking-[0.2em] mb-1">Vencimento do Prazo</p>
-                <p className="text-4xl font-serif font-bold text-green-800">{resultado}</p>
-                <p className="text-[10px] text-slate-400 mt-1">*Verifique feriados locais.</p>
+
+            <div className="p-6 space-y-3">
+              {/* Estado */}
+              <div className="relative">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Estado</label>
+                <select className={selectCls} value={calcEstado} onChange={e => setCalcEstado(e.target.value)}>
+                  {Object.keys(ESTADOS_CIDADES).map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                </select>
               </div>
-            )}
+
+              {/* Município */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Município</label>
+                <select className={selectCls} value={calcCidade} onChange={e => setCalcCidade(e.target.value)}>
+                  {(ESTADOS_CIDADES[calcEstado]||[]).map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Matéria */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Matéria</label>
+                <select className={selectCls} value={calcMateria} onChange={e => setCalcMateria(e.target.value)}>
+                  {MATERIAS_CALC.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+
+              {/* Processo */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Processo</label>
+                <div className="flex gap-3">
+                  {["Eletrônico","Físico"].map(op => (
+                    <button key={op} onClick={() => setCalcProcesso(op)}
+                      className={`flex-1 py-2.5 rounded-lg border text-sm font-bold transition ${calcProcesso===op ? 'bg-[#0f172a] text-white border-[#0f172a] shadow' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+                      {op === 'Eletrônico' ? '💻 Eletrônico' : '📄 Físico'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tribunal */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">Tribunal</label>
+                <select className={selectCls} value={calcTribunal} onChange={e => setCalcTribunal(e.target.value)}>
+                  {TRIBUNAIS_CALC.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+
+              {/* Divisor */}
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest text-center mb-3">Insira a data da publicação</p>
+
+                {/* Data */}
+                <div className="mb-3">
+                  <input type="date" className="w-full p-2.5 border border-slate-200 rounded-lg text-center text-sm text-slate-700 outline-none focus:border-yellow-500 transition bg-slate-50 focus:bg-white" value={dataInicial} onChange={e => { setDataInicial(e.target.value); setResultado(null); }}/>
+                </div>
+
+                {/* Dias */}
+                <div className="mb-3">
+                  <input type="number" min="1" className="w-full p-2.5 border border-slate-200 rounded-lg text-center text-sm text-slate-700 outline-none focus:border-yellow-500 transition bg-slate-50 focus:bg-white" placeholder="Prazo em dias" value={dias} onChange={e => { setDias(e.target.value); setResultado(null); }}/>
+                </div>
+
+                {/* Úteis / Corridos */}
+                <div className="flex justify-center gap-8 py-2">
+                  {[{val:'uteis',label:'Úteis'},{val:'corridos',label:'Corridos'}].map(o => (
+                    <label key={o.val} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="calc_tipo" checked={tipo===o.val} onChange={()=>setTipo(o.val)} className="w-4 h-4 accent-yellow-500 cursor-pointer"/>
+                      <span className={`text-sm font-semibold ${tipo===o.val?'text-[#0f172a]':'text-slate-400'}`}>{o.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botão Calcular */}
+              <button onClick={calcular} className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-yellow-500/30 hover:-translate-y-0.5 transition duration-200 text-sm tracking-wide mt-1">
+                Calcular
+              </button>
+
+              {/* Resultado */}
+              {resultado && (
+                <div className="bg-green-50 p-5 rounded-xl text-center border border-green-200 shadow-sm fade-in">
+                  <p className="text-xs text-green-700 font-bold uppercase tracking-[0.2em] mb-1">Vencimento do Prazo</p>
+                  <p className="text-4xl font-serif font-bold text-green-800">{resultado}</p>
+                  <p className="text-[10px] text-slate-400 mt-2">
+                    {calcProcesso} · {calcMateria} · {calcTribunal.split('(')[0].trim()} · {calcCidade}
+                  </p>
+                  <p className="text-[10px] text-slate-300 mt-1">*Verifique feriados locais.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       );
