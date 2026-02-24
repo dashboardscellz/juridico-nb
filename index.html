@@ -202,26 +202,63 @@
       ]},
     ];
 
-    // ─── ESTADOS E CIDADES (ampliado) ──────────────────────────
+    // ─── ESTADOS (todos 27) ──────────────────────────────────────
+    const LISTA_ESTADOS = [
+      "AC – Acre","AL – Alagoas","AP – Amapá","AM – Amazonas",
+      "BA – Bahia","CE – Ceará","DF – Distrito Federal","ES – Espírito Santo",
+      "GO – Goiás","MA – Maranhão","MT – Mato Grosso","MS – Mato Grosso do Sul",
+      "MG – Minas Gerais","PA – Pará","PB – Paraíba","PR – Paraná",
+      "PE – Pernambuco","PI – Piauí","RJ – Rio de Janeiro","RN – Rio Grande do Norte",
+      "RS – Rio Grande do Sul","RO – Rondônia","RR – Roraima","SC – Santa Catarina",
+      "SP – São Paulo","SE – Sergipe","TO – Tocantins"
+    ];
+    // Mantido para compatibilidade com calculadora
     const ESTADOS_CIDADES = {
-      "PE – Pernambuco": ["Recife","Caruaru","Petrolina","Olinda","Paulista","Garanhuns","Goiana",
-        "Jaboatão dos Guararapes","Cabo de Santo Agostinho","Vitória de Santo Antão",
-        "Arcoverde","Serra Talhada","Santa Cruz do Capibaribe","Carpina","Surubim","Bezerros","Limoeiro","Toritama"],
-      "PB – Paraíba": ["João Pessoa","Campina Grande","Patos","Guarabira","Cajazeiras","Sousa","Bayeux","Santa Rita","Sapé"],
-      "AL – Alagoas": ["Maceió","Arapiraca","Palmeira dos Índios","Rio Largo","Penedo"],
-      "BA – Bahia": ["Salvador","Feira de Santana","Vitória da Conquista","Ilhéus","Itabuna","Barreiras","Juazeiro","Alagoinhas"],
-      "CE – Ceará": ["Fortaleza","Caucaia","Juazeiro do Norte","Maracanaú","Sobral"],
-      "RN – Rio Grande do Norte": ["Natal","Mossoró","Parnamirim","Caicó"],
-      "SE – Sergipe": ["Aracaju","Lagarto","Itabaiana"],
-      "MA – Maranhão": ["São Luís","Imperatriz","Timon"],
-      "PI – Piauí": ["Teresina","Parnaíba","Floriano"],
-      "SP – São Paulo": ["São Paulo","Campinas","Santos","Ribeirão Preto","Sorocaba","Guarulhos","Santo André","Jundiaí"],
-      "RJ – Rio de Janeiro": ["Rio de Janeiro","Niterói","Duque de Caxias","Nova Iguaçu"],
-      "MG – Minas Gerais": ["Belo Horizonte","Uberlândia","Contagem","Juiz de Fora","Betim"],
+      "PE – Pernambuco": ["Recife","Caruaru","Petrolina","Olinda","Paulista","Goiana"],
+      "PB – Paraíba": ["João Pessoa","Campina Grande"],
+      "AL – Alagoas": ["Maceió","Arapiraca"],
+      "BA – Bahia": ["Salvador","Feira de Santana"],
+      "CE – Ceará": ["Fortaleza","Caucaia"],
+      "SP – São Paulo": ["São Paulo","Campinas"],
+      "RJ – Rio de Janeiro": ["Rio de Janeiro","Niterói"],
+      "MG – Minas Gerais": ["Belo Horizonte","Uberlândia"],
       "DF – Distrito Federal": ["Brasília"],
-      "GO – Goiás": ["Goiânia","Aparecida de Goiânia","Anápolis"],
-      "PR – Paraná": ["Curitiba","Londrina","Maringá","Ponta Grossa"],
-      "RS – Rio Grande do Sul": ["Porto Alegre","Caxias do Sul","Pelotas","Santa Maria","Canoas"],
+      "GO – Goiás": ["Goiânia","Anápolis"],
+      "PR – Paraná": ["Curitiba","Londrina"],
+      "RS – Rio Grande do Sul": ["Porto Alegre","Caxias do Sul"],
+    };
+
+    // ─── COR DO DASHBOARD POR ÁREA ────────────────────────────
+    const getDashboardTheme = (ramo) => {
+      if (!ramo) return { accent: '#0f172a', light: '#f1f5f9', text: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200', bar: '#0f172a' };
+      const r = ramo.toLowerCase();
+      if (r.includes('previdenc')) return { accent: '#16a34a', light: '#f0fdf4', text: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200', bar: '#16a34a' };
+      if (r.includes('criminal') || r.includes('penal')) return { accent: '#dc2626', light: '#fef2f2', text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200', bar: '#dc2626' };
+      if (r.includes('cível') || r.includes('civil') || r.includes('consumidor') || r.includes('imobil')) return { accent: '#2563eb', light: '#eff6ff', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', bar: '#2563eb' };
+      if (r.includes('trabalhist')) return { accent: '#d97706', light: '#fffbeb', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', bar: '#d97706' };
+      if (r.includes('família') || r.includes('familia') || r.includes('sucess')) return { accent: '#be185d', light: '#fdf2f8', text: 'text-pink-700', bg: 'bg-pink-50', border: 'border-pink-200', bar: '#be185d' };
+      if (r.includes('tribut')) return { accent: '#c2410c', light: '#fff7ed', text: 'text-orange-700', bg: 'bg-orange-50', border: 'border-orange-200', bar: '#c2410c' };
+      if (r.includes('admin') || r.includes('empresar')) return { accent: '#7e22ce', light: '#faf5ff', text: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', bar: '#7e22ce' };
+      return { accent: '#0f172a', light: '#f1f5f9', text: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200', bar: '#0f172a' };
+    };
+
+    // Cores para gráfico por ramo
+    const CHART_COLORS_BY_RAMO = {
+      'Previdenciário': '#16a34a',
+      'Criminal': '#dc2626',
+      'Cível': '#2563eb',
+      'Trabalhista': '#d97706',
+      'Família e Sucessões': '#be185d',
+      'Família': '#be185d',
+      'Tributário': '#c2410c',
+      'Administrativo': '#7e22ce',
+      'Empresarial': '#3730a3',
+      'Consumidor': '#0891b2',
+      'Imobiliário': '#0369a1',
+      'Digital': '#6366f1',
+      'Ambiental': '#059669',
+      'Eleitoral': '#1d4ed8',
+      'Outros': '#64748b',
     };
 
     const LISTA_EQUIPE_PADRAO = ["Evison Nascimento","Adiellyson Bomfim","Manassés Oliveira (Estagiário)","Bárbara Brenda (Estagiária)"];
@@ -426,7 +463,20 @@
               </div>
             </div>
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-              <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Briefcase/> Dados Processuais</h3>
+              <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Briefcase/> {p.ramo === 'Previdenciário' ? 'Dados INSS' : 'Dados Processuais'}</h3>
+              {p.ramo === 'Previdenciário' ? (
+                <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Área</p><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getChip(p.ramo)}`}>{p.ramo}</span></div>
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Status</p><p className="font-semibold text-slate-700">{p.statusProcessual}</p></div>
+                  <div className="col-span-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Patologia / Benefício</p><p className="text-slate-700">{p.patologia || '-'}</p></div>
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Login GOV</p><p className="font-mono text-slate-700">{p.govLogin || '-'}</p></div>
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Senha GOV</p><p className="font-mono text-slate-700">{p.govSenha || '-'}</p></div>
+                  {p.dataPericia && <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Data Perícia</p><p className="text-slate-700">{new Date(p.dataPericia).toLocaleString('pt-BR')}</p></div>}
+                  {p.dataSocial && <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Avaliação Social</p><p className="text-slate-700">{new Date(p.dataSocial).toLocaleString('pt-BR')}</p></div>}
+                  <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Advogado</p><p className="text-slate-700">{p.advogado}</p></div>
+                  {p.prazo && <div><p className="text-[10px] font-bold text-red-500 uppercase mb-0.5">Prazo Fatal</p><p className="font-bold text-red-600">{new Date(p.prazo).toLocaleDateString('pt-BR')}</p></div>}
+                </div>
+              ) : (
               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Área</p><span className={`text-[10px] font-bold px-2 py-0.5 rounded ${getChip(p.ramo)}`}>{p.ramo}</span></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Status</p><p className="font-semibold text-slate-700">{p.statusProcessual}</p></div>
@@ -434,9 +484,10 @@
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tribunal</p><p className="text-slate-700">{p.tribunal || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Vara / Juízo</p><p className="text-slate-700">{p.vara || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Advogado</p><p className="text-slate-700">{p.advogado}</p></div>
-                <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Prazo Fatal</p><p className="font-bold text-red-600">{p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '-'}</p></div>
+                <div><p className="text-[10px] font-bold text-red-500 uppercase mb-0.5">Prazo Fatal</p><p className="font-bold text-red-600">{p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Parte Contrária</p><p className="text-slate-700">{p.parteContraria || '-'}</p></div>
               </div>
+              )}
             </div>
             {p.descricao && <div className="bg-slate-50 p-4 rounded-lg border border-slate-200"><p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Resumo do Caso</p><p className="text-sm text-slate-700 leading-relaxed">{p.descricao}</p></div>}
           </div>
@@ -1149,11 +1200,10 @@
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoMembro, setNovoMembro] = useState("");
       const [editingUser, setEditingUser] = useState(null);
-      const [cidadesDaUF, setCidadesDaUF] = useState(ESTADOS_CIDADES["PE – Pernambuco"]);
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "",
-        rua: "", numero: "", bairro: "", cidade: "Recife", estado: "PE – Pernambuco",
+        rua: "", numero: "", bairro: "", cidade: "", estado: "PE – Pernambuco",
         parteContraria: "", tipoParteContraria: "Pessoa Física",
         numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Evison Nascimento",
         prazo: "", statusProcessual: "Em Andamento",
@@ -1167,12 +1217,7 @@
       const [formData, setFormData] = useState(initialForm);
       const setF = patch => setFormData(f => ({...f, ...patch}));
 
-      // Atualiza cidades ao mudar estado
-      useEffect(() => {
-        const cidades = ESTADOS_CIDADES[formData.estado] || [];
-        setCidadesDaUF(cidades);
-        if (cidades.length && !cidades.includes(formData.cidade)) setF({cidade: cidades[0]});
-      }, [formData.estado]);
+      // (cidade agora é campo de texto livre - removido useEffect de cidades)      }, [formData.estado]);
 
       const handleLogin = (u, r) => { setUser(u); setRole(r); setAuthOk(true); };
       const handleLogout = async () => {
@@ -1376,22 +1421,40 @@
                     <div className="mt-4 text-xs font-medium text-slate-400">Casos encerrados com sucesso</div>
                   </div>
                 </div>
+                {/* Resumo por área com cores */}
+                {Object.keys(stats.ramosCount).length > 0 && (
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Resumo por Área</h4>
+                    <div className="flex flex-wrap gap-3">
+                      {Object.entries(stats.ramosCount).sort((a,b)=>b[1]-a[1]).map(([ramo, count]) => {
+                        const theme = getDashboardTheme(ramo);
+                        return (
+                          <div key={ramo} className="flex items-center gap-2 px-4 py-2 rounded-xl border shadow-sm" style={{backgroundColor: theme.light, borderColor: theme.accent + '33'}}>
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor: theme.accent}}></span>
+                            <span className="text-sm font-bold" style={{color: theme.accent}}>{ramo}</span>
+                            <span className="text-xs font-black ml-1 px-2 py-0.5 rounded-full text-white" style={{backgroundColor: theme.accent}}>{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover-card h-96">
                     <h4 className="font-bold text-[#0f172a] mb-6 flex items-center gap-2"><Icons.Chart/> Distribuição por Área</h4>
                     <div className="h-64 flex justify-center">
                       <ChartComponent type="doughnut"
-                        data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: ['#0f172a','#d97706','#2563eb','#16a34a','#dc2626','#9333ea','#0891b2','#65a30d'], borderWidth: 0, hoverOffset: 10 }] }}
+                        data={{ labels: Object.keys(stats.ramosCount), datasets: [{ data: Object.values(stats.ramosCount), backgroundColor: Object.keys(stats.ramosCount).map(r => CHART_COLORS_BY_RAMO[r] || '#64748b'), borderWidth: 0, hoverOffset: 10 }] }}
                         options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: { family: 'Inter', size: 11 } } } }, cutout: '70%' }}
                       />
                     </div>
                   </div>
                   <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover-card h-96">
-                    <h4 className="font-bold text-[#0f172a] mb-6 flex items-center gap-2"><Icons.Chart/> Volume Processual</h4>
+                    <h4 className="font-bold text-[#0f172a] mb-6 flex items-center gap-2"><Icons.Chart/> Volume por Área</h4>
                     <div className="h-64">
                       <ChartComponent type="bar"
-                        data={{ labels: ['Em Andamento', 'Concluídos', 'Total'], datasets: [{ label: 'Processos', data: [stats.ativos, stats.conclusos, stats.total], backgroundColor: ['#2563eb','#16a34a','#0f172a'], borderRadius: 6 }] }}
-                        options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }}
+                        data={{ labels: Object.keys(stats.ramosCount), datasets: [{ label: 'Processos', data: Object.values(stats.ramosCount), backgroundColor: Object.keys(stats.ramosCount).map(r => CHART_COLORS_BY_RAMO[r] || '#64748b'), borderRadius: 6 }] }}
+                        options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }}
                       />
                     </div>
                   </div>
@@ -1664,14 +1727,12 @@
                       <div className="col-span-12 md:col-span-4">
                         <label className="text-xs font-bold text-[#0f172a] mb-1.5 block">Estado (UF)</label>
                         <select className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-[#0f172a] transition shadow-sm text-sm" value={formData.estado} onChange={e=>setF({estado: e.target.value})}>
-                          {Object.keys(ESTADOS_CIDADES).map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                          {LISTA_ESTADOS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
                         </select>
                       </div>
                       <div className="col-span-12 md:col-span-8">
                         <label className="text-xs font-bold text-[#0f172a] mb-1.5 block">Cidade</label>
-                        <select className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-[#0f172a] transition shadow-sm text-sm" value={formData.cidade} onChange={e=>setF({cidade: e.target.value})}>
-                          {cidadesDaUF.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                        <input className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 outline-none focus:border-[#0f172a] transition shadow-sm text-sm" placeholder="Digite o município..." value={formData.cidade} onChange={e=>setF({cidade: e.target.value})}/>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1718,7 +1779,8 @@
                         </div>
                       )}
 
-                      {/* Nº Processo */}
+                      {/* Nº Processo - escondido para Previdenciário */}
+                      {formData.ramo !== 'Previdenciário' && (
                       <div className="mt-3">
                         <div className="bg-white p-3 rounded-lg border border-slate-200 flex items-center gap-3 mb-3">
                           <input type="checkbox" className="w-4 h-4" checked={formData.semProcesso} onChange={e=>setF({semProcesso: e.target.checked})}/>
@@ -1731,6 +1793,7 @@
                           </div>
                         )}
                       </div>
+                      )}
 
                       {/* Status Processual agrupado por área */}
                       <div className="mt-3">
@@ -1745,7 +1808,8 @@
                       </div>
                     </div>
 
-                    {/* Localização & Tribunal */}
+                    {/* Localização & Tribunal - escondido para Previdenciário */}
+                    {formData.ramo !== 'Previdenciário' && (
                     <div className="space-y-3">
                       <h5 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Localização & Tribunal</h5>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1765,6 +1829,7 @@
                         </div>
                       </div>
                     </div>
+                    )}
 
                     {/* Advogado e Prazo */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
