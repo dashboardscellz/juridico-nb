@@ -473,6 +473,8 @@
             <div className="text-right text-xs text-slate-500"><p className="font-bold uppercase tracking-wider mb-1">Ficha Processual</p><p>Gerada em: {new Date().toLocaleDateString()}</p><p className="font-mono mt-1">REF: {p.id.slice(0,8).toUpperCase()}</p></div>
           </div>
           <div className="space-y-6 overflow-y-visible">
+            
+            {/* DADOS DO CLIENTE */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
@@ -480,8 +482,11 @@
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">CPF</p><p className="font-mono text-slate-700">{p.cpf || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Telefone</p><p className="font-mono text-slate-700">{p.telefone || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Cidade / Estado</p><p className="text-slate-700">{p.cidade || '-'}{p.estado ? ` · ${p.estado}` : ''}</p></div>
+                <div className="col-span-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Endereço Completo</p><p className="text-slate-700">{p.rua ? `${p.rua}, ${p.numero || 'S/N'} - ${p.bairro || '-'}` : '-'}</p></div>
               </div>
             </div>
+
+            {/* DADOS PROCESSUAIS */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Briefcase/> {p.ramo === 'Previdenciário' ? 'Dados INSS' : 'Dados Processuais'}</h3>
               {p.ramo === 'Previdenciário' ? (
@@ -505,11 +510,52 @@
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Vara / Juízo</p><p className="text-slate-700">{p.vara || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Advogado</p><p className="text-slate-700">{p.advogado}</p></div>
                 <div><p className="text-[10px] font-bold text-red-500 uppercase mb-0.5">Prazo Fatal</p><p className="font-bold text-red-600">{p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '-'}</p></div>
-                <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Parte Contrária</p><p className="text-slate-700">{p.parteContraria || '-'}</p></div>
+                <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Parte Contrária</p><p className="text-slate-700">{p.parteContraria || '-'} {p.tipoParteContraria ? `(${p.tipoParteContraria})` : ''}</p></div>
               </div>
               )}
             </div>
+
+            {/* DOCUMENTOS E ANEXOS */}
+            <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.FileText/> Documentos e Anexos</h3>
+               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
+                 <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Procuração</p>
+                    <p className="text-slate-700 flex items-center gap-2">
+                      {p.procuracaoEntregue ? <span className="text-green-600 font-bold">✓ Entregue</span> : <span className="text-red-500">✗ Pendente</span>}
+                      {p.linkProcuracao && <a href={p.linkProcuracao} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs underline no-print">Ver Link</a>}
+                    </p>
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Contrato</p>
+                    <p className="text-slate-700 flex items-center gap-2">
+                      {p.contratoEntregue ? <span className="text-green-600 font-bold">✓ Assinado</span> : <span className="text-red-500">✗ Pendente</span>}
+                      {p.linkContrato && <a href={p.linkContrato} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs underline no-print">Ver Link</a>}
+                    </p>
+                 </div>
+               </div>
+            </div>
+
+            {/* FINANCEIRO E HONORÁRIOS */}
+            <div className="bg-yellow-50/50 p-6 rounded-lg border border-yellow-100">
+               <h3 className="text-sm font-bold text-yellow-800 uppercase border-b border-yellow-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Chart/> Financeiro e Honorários</h3>
+               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
+                 <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Tipo de Pagamento</p><p className="font-semibold text-slate-700">{p.tipoPagamento || '-'}</p></div>
+                 <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Status do Pgto.</p><p className={`font-bold ${p.statusPagamento === 'Pago' ? 'text-green-600' : 'text-orange-500'}`}>{p.statusPagamento || '-'}</p></div>
+                 
+                 {p.tipoPagamento === 'Valor Cheio' && <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Valor Total</p><p className="text-slate-700">R$ {p.valorContrato || '-'}</p></div>}
+                 
+                 {p.tipoPagamento === 'Parcelado' && <div className="col-span-2"><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Parcelamento</p><p className="text-slate-700">{p.qtdParcelas}x de R$ {p.valorParcela || '-'}</p></div>}
+                 
+                 {p.tipoPagamento === 'Êxito' && <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Percentual (%)</p><p className="text-slate-700">{p.percentualContrato || '-'}%</p></div>}
+                 
+                 {p.tipoPagamento === 'Misto' && <div className="col-span-2"><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Misto</p><p className="text-slate-700">Entrada: R$ {p.valorEntrada || '-'} + {p.percentualContrato || '-'}% (Êxito)</p></div>}
+               </div>
+            </div>
+
+            {/* RESUMO DO CASO */}
             {p.descricao && <div className="bg-slate-50 p-4 rounded-lg border border-slate-200"><p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Resumo do Caso</p><p className="text-sm text-slate-700 leading-relaxed">{p.descricao}</p></div>}
+            
           </div>
           <div className="mt-6 no-print flex gap-3">
             <button onClick={() => window.print()} className="flex-1 py-2.5 bg-[#0f172a] text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition">Imprimir Ficha</button>
