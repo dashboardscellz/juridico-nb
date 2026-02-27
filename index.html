@@ -473,8 +473,6 @@
             <div className="text-right text-xs text-slate-500"><p className="font-bold uppercase tracking-wider mb-1">Ficha Processual</p><p>Gerada em: {new Date().toLocaleDateString()}</p><p className="font-mono mt-1">REF: {p.id.slice(0,8).toUpperCase()}</p></div>
           </div>
           <div className="space-y-6 overflow-y-visible">
-            
-            {/* DADOS DO CLIENTE */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Users/> Dados do Cliente</h3>
               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
@@ -482,11 +480,8 @@
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">CPF</p><p className="font-mono text-slate-700">{p.cpf || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Telefone</p><p className="font-mono text-slate-700">{p.telefone || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Cidade / Estado</p><p className="text-slate-700">{p.cidade || '-'}{p.estado ? ` · ${p.estado}` : ''}</p></div>
-                <div className="col-span-2"><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Endereço Completo</p><p className="text-slate-700">{p.rua ? `${p.rua}, ${p.numero || 'S/N'} - ${p.bairro || '-'}` : '-'}</p></div>
               </div>
             </div>
-
-            {/* DADOS PROCESSUAIS */}
             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Briefcase/> {p.ramo === 'Previdenciário' ? 'Dados INSS' : 'Dados Processuais'}</h3>
               {p.ramo === 'Previdenciário' ? (
@@ -510,52 +505,11 @@
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Vara / Juízo</p><p className="text-slate-700">{p.vara || '-'}</p></div>
                 <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Advogado</p><p className="text-slate-700">{p.advogado}</p></div>
                 <div><p className="text-[10px] font-bold text-red-500 uppercase mb-0.5">Prazo Fatal</p><p className="font-bold text-red-600">{p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '-'}</p></div>
-                <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Parte Contrária</p><p className="text-slate-700">{p.parteContraria || '-'} {p.tipoParteContraria ? `(${p.tipoParteContraria})` : ''}</p></div>
+                <div><p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Parte Contrária</p><p className="text-slate-700">{p.parteContraria || '-'}</p></div>
               </div>
               )}
             </div>
-
-            {/* DOCUMENTOS E ANEXOS */}
-            <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
-               <h3 className="text-sm font-bold text-[#0f172a] uppercase border-b border-slate-200 pb-2 mb-4 flex gap-2 items-center"><Icons.FileText/> Documentos e Anexos</h3>
-               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
-                 <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Procuração</p>
-                    <p className="text-slate-700 flex items-center gap-2">
-                      {p.procuracaoEntregue ? <span className="text-green-600 font-bold">✓ Entregue</span> : <span className="text-red-500">✗ Pendente</span>}
-                      {p.linkProcuracao && <a href={p.linkProcuracao} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs underline no-print">Ver Link</a>}
-                    </p>
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">Contrato</p>
-                    <p className="text-slate-700 flex items-center gap-2">
-                      {p.contratoEntregue ? <span className="text-green-600 font-bold">✓ Assinado</span> : <span className="text-red-500">✗ Pendente</span>}
-                      {p.linkContrato && <a href={p.linkContrato} target="_blank" rel="noopener noreferrer" className="text-blue-500 text-xs underline no-print">Ver Link</a>}
-                    </p>
-                 </div>
-               </div>
-            </div>
-
-            {/* FINANCEIRO E HONORÁRIOS */}
-            <div className="bg-yellow-50/50 p-6 rounded-lg border border-yellow-100">
-               <h3 className="text-sm font-bold text-yellow-800 uppercase border-b border-yellow-200 pb-2 mb-4 flex gap-2 items-center"><Icons.Chart/> Financeiro e Honorários</h3>
-               <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
-                 <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Tipo de Pagamento</p><p className="font-semibold text-slate-700">{p.tipoPagamento || '-'}</p></div>
-                 <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Status do Pgto.</p><p className={`font-bold ${p.statusPagamento === 'Pago' ? 'text-green-600' : 'text-orange-500'}`}>{p.statusPagamento || '-'}</p></div>
-                 
-                 {p.tipoPagamento === 'Valor Cheio' && <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Valor Total</p><p className="text-slate-700">R$ {p.valorContrato || '-'}</p></div>}
-                 
-                 {p.tipoPagamento === 'Parcelado' && <div className="col-span-2"><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Parcelamento</p><p className="text-slate-700">{p.qtdParcelas}x de R$ {p.valorParcela || '-'}</p></div>}
-                 
-                 {p.tipoPagamento === 'Êxito' && <div><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Percentual (%)</p><p className="text-slate-700">{p.percentualContrato || '-'}%</p></div>}
-                 
-                 {p.tipoPagamento === 'Misto' && <div className="col-span-2"><p className="text-[10px] font-bold text-yellow-600 uppercase mb-0.5">Misto</p><p className="text-slate-700">Entrada: R$ {p.valorEntrada || '-'} + {p.percentualContrato || '-'}% (Êxito)</p></div>}
-               </div>
-            </div>
-
-            {/* RESUMO DO CASO */}
             {p.descricao && <div className="bg-slate-50 p-4 rounded-lg border border-slate-200"><p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Resumo do Caso</p><p className="text-sm text-slate-700 leading-relaxed">{p.descricao}</p></div>}
-            
           </div>
           <div className="mt-6 no-print flex gap-3">
             <button onClick={() => window.print()} className="flex-1 py-2.5 bg-[#0f172a] text-white rounded-lg font-bold text-sm hover:bg-slate-800 transition">Imprimir Ficha</button>
@@ -1251,6 +1205,7 @@
       const [busca, setBusca] = useState("");
       const [filtroResponsavel, setFiltroResponsavel] = useState("Todos");
       const [filtroRamo, setFiltroRamo] = useState("");
+      const [filtroStatus, setFiltroStatus] = useState("");
       const [aba, setAba] = useState('dashboard');
       const [privacidade, setPrivacidade] = useState(false);
 
@@ -1323,10 +1278,10 @@
       const stats = useMemo(() => {
         const total = processos.length;
         const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento' || (!p.statusProcessual)).length;
-        const conclusos = processos.filter(p => p.statusProcessual === 'Concluso' || p.statusProcessual === 'Transitado em julgado').length;
+        const arquivados = processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso' || p.statusProcessual === 'Transitado em julgado').length;
         const ramosCount = {};
         processos.forEach(p => { ramosCount[p.ramo] = (ramosCount[p.ramo] || 0) + 1; });
-        return { total, ativos, conclusos, ramosCount };
+        return { total, ativos, arquivados, ramosCount };
       }, [processos]);
 
       const adicionarMembroEquipe = async () => {
@@ -1395,8 +1350,9 @@
         const mB = !busca || p.cliente?.toLowerCase().includes(lb) || p.cpf?.includes(busca) || p.numeroProcesso?.toLowerCase().includes(lb);
         const mRe = filtroResponsavel === "Todos" || p.advogado === filtroResponsavel;
         const mRa = !filtroRamo || p.ramo === filtroRamo;
-        return mB && mRe && mRa;
-      }), [processos, busca, filtroResponsavel, filtroRamo]);
+        const mSt = !filtroStatus || (filtroStatus === "Arquivado" ? (p.statusProcessual === "Arquivado" || p.statusProcessual === "Concluso") : p.statusProcessual === filtroStatus);
+        return mB && mRe && mRa && mSt;
+      }), [processos, busca, filtroResponsavel, filtroRamo, filtroStatus]);
 
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
@@ -1482,9 +1438,9 @@
                   </div>
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover-card relative overflow-hidden group">
                     <div className="absolute right-0 top-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full transition group-hover:scale-110"></div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Concluídos</h3>
-                    <p className="text-4xl font-serif font-bold text-emerald-600">{stats.conclusos}</p>
-                    <div className="mt-4 text-xs font-medium text-slate-400">Casos encerrados com sucesso</div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Arquivados</h3>
+                    <p className="text-4xl font-serif font-bold text-emerald-600">{stats.arquivados}</p>
+                    <div className="mt-4 text-xs font-medium text-slate-400">Casos arquivados / encerrados</div>
                   </div>
                 </div>
                 {/* Resumo por área com cores */}
@@ -1636,6 +1592,15 @@
                       <option value="">Todos os Ramos</option>
                       {MATERIAS.map(m => <option key={m.valor} value={m.valor}>{m.valor}</option>)}
                     </select>
+                    {/* Filtro por Status */}
+                    <select className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-600 outline-none cursor-pointer hover:bg-slate-50 transition" value={filtroStatus} onChange={e=>setFiltroStatus(e.target.value)}>
+                      <option value="">Todos os Status</option>
+                      <option value="Em Andamento">Em Andamento</option>
+                      <option value="Arquivado">Arquivado</option>
+                      <option value="Suspenso">Suspenso</option>
+                      <option value="Cancelado">Cancelado</option>
+                      <option value="Transitado em julgado">Transitado em julgado</option>
+                    </select>
                     <button onClick={exportar} className="flex items-center gap-2 text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-4 py-2.5 rounded-xl hover:bg-green-100 transition"><div className="w-4 h-4"><Icons.Excel/></div> Excel</button>
                   </div>
                 </div>
@@ -1667,9 +1632,9 @@
                       )}
                       {processosFiltrados.map(p => {
                         const st = p.statusProcessual || "Em Andamento";
-                        const stColor = (st==='Concluso'||st.includes('julgado')||st.includes('Extinto'))
+                        const stColor = (st==='Arquivado'||st==='Concluso'||st.includes('julgado')||st.includes('Extinto'))
                           ? 'bg-green-50 text-green-700 border-green-100'
-                          : (st==='Arquivado'||st==='Cancelado'||st==='Suspenso')
+                          : (st==='Cancelado'||st==='Suspenso')
                           ? 'bg-slate-100 text-slate-500 border-slate-200'
                           : (st.includes('recurso')||st.includes('apelação'))
                           ? 'bg-purple-50 text-purple-700 border-purple-100'
