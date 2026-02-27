@@ -1493,13 +1493,12 @@
                     <h4 className="font-bold text-[#0f172a] mb-6 flex items-center gap-2"><Icons.Chart/> Status dos Processos</h4>
                     <div className="h-52 flex justify-center">
                       {(() => {
-                        const statusLabels = ['Em Andamento', 'Arquivado', 'Suspenso', 'Cancelado', 'Outros'];
-                        const statusColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#94a3b8'];
+                        const statusLabels = ['Em Andamento', 'Arquivado', 'Suspenso', 'Cancelado'];
+                        const statusColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
                         const statusData = statusLabels.map(s => {
                           if (s === 'Arquivado') return processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso').length;
                           if (s === 'Em Andamento') return processos.filter(p => p.statusProcessual === 'Em Andamento' || !p.statusProcessual).length;
-                          if (s === 'Outros') return processos.filter(p => !['Em Andamento','Arquivado','Concluso','Suspenso','Cancelado'].includes(p.statusProcessual) && p.statusProcessual).length;
-                          return processos.filter(p => p.statusProcessual === s).length;
+                                          return processos.filter(p => p.statusProcessual === s).length;
                         });
                         const filtered = statusLabels.map((l,i) => ({ l, d: statusData[i], c: statusColors[i] })).filter(x => x.d > 0);
                         return (
@@ -1519,7 +1518,6 @@
                         { label: 'Arquivado', cor: 'bg-emerald-500', count: processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso').length },
                         { label: 'Suspenso', cor: 'bg-amber-400', count: processos.filter(p => p.statusProcessual === 'Suspenso').length },
                         { label: 'Cancelado', cor: 'bg-red-400', count: processos.filter(p => p.statusProcessual === 'Cancelado').length },
-                        { label: 'Outros', cor: 'bg-slate-400', count: processos.filter(p => !['Em Andamento','Arquivado','Concluso','Suspenso','Cancelado'].includes(p.statusProcessual) && p.statusProcessual).length },
                       ].filter(x => x.count > 0).map(item => (
                         <div key={item.label} className="flex items-center gap-3">
                           <div className={`w-3 h-3 rounded-full shrink-0 ${item.cor}`}></div>
