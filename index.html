@@ -994,11 +994,18 @@
       const usuarioId = usuario.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
       const docId = `agenda_${usuarioId}_${dataSel.replace(/-/g,'')}`;
 
+      // Helper centralizado - garante que o mesmo algoritmo é usado em todo lugar
+      const gerarAgendaDocId = (login, data) => {
+        const loginId = login.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        const dataId = data.replace(/-/g,'');
+        return `agenda_${loginId}_${dataId}`;
+      };
+
       const carregar = async data => {
         setLoading(true);
         try {
-          const uId = usuario.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-          const dId = `agenda_${uId}_${data.replace(/-/g,'')}`;
+          const dId = gerarAgendaDocId(usuario, data);
+          console.log('[Agenda] Carregando doc:', dId);
           const doc = await db.collection(COL_AGENDA).doc(dId).get();
           if (doc.exists) { const d = doc.data(); setTarefas(d.tarefas||[]); setNotas(d.notas||""); }
           else { setTarefas([]); setNotas(""); }
@@ -1042,9 +1049,8 @@
 
         if (dest) {
           try {
-            // dest já é o login real do usuário (id do Firestore)
-            const destId = dest.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-            const destDocId = `agenda_${destId}_${dataSel.replace(/-/g,'')}`;
+            const destDocId = gerarAgendaDocId(dest, dataSel);
+            console.log('[Compartilhar] Enviando para:', dest, '| DocID:', destDocId);
             const exDoc = await db.collection(COL_AGENDA).doc(destDocId).get();
             const existentes = exDoc.exists ? (exDoc.data().tarefas||[]) : [];
             const tarefaCompartilhada = {
@@ -1059,6 +1065,7 @@
               notas: exDoc.exists ? (exDoc.data().notas||"") : "",
               atualizadoEm: new Date().toISOString(),
             });
+            console.log('[Compartilhar] Sucesso!');
             setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest}!`);
             setTimeout(()=>setCompartilhadoFeedback(""), 3000);
           } catch(e) { console.error("Erro ao compartilhar tarefa:", e); }
@@ -1087,9 +1094,8 @@
 
         if (dest) {
           try {
-            // dest já é o login real do usuário (id do Firestore)
-            const destId = dest.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-            const destDocId = `agenda_${destId}_${dataSel.replace(/-/g,'')}`;
+            const destDocId = gerarAgendaDocId(dest, dataSel);
+            console.log('[Compartilhar Edição] Enviando para:', dest, '| DocID:', destDocId);
             const exDoc = await db.collection(COL_AGENDA).doc(destDocId).get();
             const existentes = exDoc.exists ? (exDoc.data().tarefas||[]) : [];
             const tarefaCompartilhada = {
@@ -1104,9 +1110,10 @@
               notas: exDoc.exists ? (exDoc.data().notas||"") : "",
               atualizadoEm: new Date().toISOString(),
             });
+            console.log('[Compartilhar Edição] Sucesso!');
             setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest}!`);
             setTimeout(()=>setCompartilhadoFeedback(""), 3000);
-          } catch(e) { console.error("Erro ao compartilhar tarefa:", e); }
+          } catch(e) { console.error("Erro ao compartilhar tarefa na edição:", e); }
         }
       };
 
