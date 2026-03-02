@@ -972,8 +972,13 @@
     // ════════════════════════════════════════════════════════════
     //  AGENDA DIÁRIA
     // ════════════════════════════════════════════════════════════
-    const AgendaDiaria = ({ usuario, listaEquipe }) => {
+    const AgendaDiaria = ({ usuario, listaEquipe, listaUsuarios }) => {
       const equipe = listaEquipe || LISTA_EQUIPE_PADRAO;
+      // Monta lista de destinatários usando o login real (id do Firestore)
+      // Se listaUsuarios disponível, usa login real; senão cai na listaEquipe como fallback
+      const opcoesDestinatario = listaUsuarios && listaUsuarios.length > 0
+        ? listaUsuarios.filter(u => u.id !== usuario).map(u => ({ login: u.id, display: u.id }))
+        : equipe.filter(n => n !== usuario).map(n => ({ login: n, display: n }));
       const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
       const [dataSel, setDataSel]   = useState(hoje);
       const [tarefas, setTarefas]   = useState([]);
@@ -1037,6 +1042,7 @@
 
         if (dest) {
           try {
+            // dest já é o login real do usuário (id do Firestore)
             const destId = dest.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
             const destDocId = `agenda_${destId}_${dataSel.replace(/-/g,'')}`;
             const exDoc = await db.collection(COL_AGENDA).doc(destDocId).get();
@@ -1053,7 +1059,7 @@
               notas: exDoc.exists ? (exDoc.data().notas||"") : "",
               atualizadoEm: new Date().toISOString(),
             });
-            setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest.split(' ')[0]}!`);
+            setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest}!`);
             setTimeout(()=>setCompartilhadoFeedback(""), 3000);
           } catch(e) { console.error("Erro ao compartilhar tarefa:", e); }
         }
@@ -1081,6 +1087,7 @@
 
         if (dest) {
           try {
+            // dest já é o login real do usuário (id do Firestore)
             const destId = dest.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
             const destDocId = `agenda_${destId}_${dataSel.replace(/-/g,'')}`;
             const exDoc = await db.collection(COL_AGENDA).doc(destDocId).get();
@@ -1097,7 +1104,7 @@
               notas: exDoc.exists ? (exDoc.data().notas||"") : "",
               atualizadoEm: new Date().toISOString(),
             });
-            setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest.split(' ')[0]}!`);
+            setCompartilhadoFeedback(`✅ Tarefa enviada para ${dest}!`);
             setTimeout(()=>setCompartilhadoFeedback(""), 3000);
           } catch(e) { console.error("Erro ao compartilhar tarefa:", e); }
         }
@@ -1328,7 +1335,7 @@
                   <select value={novaTarefa.destinatario} onChange={e=>setNovaTarefa({...novaTarefa,destinatario:e.target.value})}
                     style={{flex:1, border:'none', borderRadius:7, padding:'4px 8px', fontSize:12, outline:'none', background:'transparent', color: novaTarefa.destinatario ? 'var(--accent-dark)' : 'var(--ink-muted)', fontWeight: novaTarefa.destinatario ? 600 : 400, cursor:'pointer'}}>
                     <option value="">— Ninguém (só minha agenda) —</option>
-                    {equipe.filter(n=>n!==usuario).map(n=><option key={n} value={n}>{n}</option>)}
+                    {opcoesDestinatario.map(o=><option key={o.login} value={o.login}>{o.display}</option>)}
                   </select>
                   {novaTarefa.destinatario && (
                     <button onClick={()=>setNovaTarefa({...novaTarefa,destinatario:""})} style={{border:'none',background:'none',cursor:'pointer',color:'var(--gold)',padding:'0 2px',display:'flex',alignItems:'center'}}>
@@ -1588,7 +1595,7 @@
                     <select value={tarefaEditando.destinatario||""} onChange={e=>setTarefaEditando({...tarefaEditando, destinatario:e.target.value})}
                       style={{width:'100%', border:'1px solid var(--border)', borderRadius:8, padding:'8px 12px', fontSize:13, outline:'none', color: tarefaEditando.destinatario ? 'var(--accent-dark)' : 'var(--ink-muted)', background:'#fff', fontWeight: tarefaEditando.destinatario ? 600 : 400}}>
                       <option value="">Ninguem</option>
-                      {equipe.filter(n=>n!==usuario).map(n=><option key={n} value={n}>{n}</option>)}
+                      {opcoesDestinatario.map(o=><option key={o.login} value={o.login}>{o.display}</option>)}
                     </select>
                     {tarefaEditando.destinatario && (
                       <p style={{margin:'6px 0 0', fontSize:11, color:'var(--accent-dark)'}}>Uma copia sera enviada para a agenda de <strong>{tarefaEditando.destinatario.split(" ")[0]}</strong> nesta data.</p>
@@ -2064,7 +2071,7 @@
             )}
 
             {/* ── AGENDA ── */}
-            {aba === 'agenda' && <AgendaDiaria usuario={user} listaEquipe={listaEquipe} />}
+            {aba === 'agenda' && <AgendaDiaria usuario={user} listaEquipe={listaEquipe} listaUsuarios={listaUsuarios} />}
 
             {/* ── EQUIPE ── */}
             {aba === 'equipe' && (role === 'master' || role === 'admin') && (
