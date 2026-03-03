@@ -56,11 +56,32 @@
 
     * { box-sizing: border-box; }
 
+    html {
+      background: #f5f7fb;
+      overflow: hidden;
+      height: 100%;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar { display: none; }
+
     body {
       font-family: 'Outfit', sans-serif;
-      background: var(--surface);
+      background: #f5f7fb;
       color: var(--ink);
       -webkit-font-smoothing: antialiased;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #root {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
     }
 
     .font-serif { font-family: 'DM Serif Display', serif; }
@@ -95,8 +116,6 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background:#d4d4d4; }
 
     /* Hide main page scrollbar */
-    html::-webkit-scrollbar { display: none; }
-    html { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* ── Header glass ── */
     .glass-header {
@@ -339,7 +358,7 @@
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 24px;
+      padding: clamp(14px, 2.5vw, 24px);
       position: relative;
       overflow: hidden;
       transition: transform .25s, box-shadow .25s;
@@ -1219,13 +1238,13 @@
       };
 
       return (
-        <div className="fade-up" style={{display:'flex', flexDirection:'column', gap:20}}>
+        <div className="fade-up" style={{display:'flex', flexDirection:'column', gap:20, width:'100%', minHeight:'100%', padding:'clamp(16px,3vw,40px)', boxSizing:'border-box', background:'#f5f7fb'}}>
 
           {/* ══ HEADER ══════════════════════════════════════════════════ */}
           <div style={{
             background:'linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%)',
-            borderRadius:18, padding:'20px 28px',
-            display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16,
+            borderRadius:18, padding:'clamp(14px,2vw,20px) clamp(16px,2.5vw,28px)',
+            display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12,
             boxShadow:'0 6px 32px rgba(13,27,53,.28)'
           }}>
             {/* Esq: info do dia */}
@@ -1272,7 +1291,7 @@
           </div>
 
           {/* ══ BODY: duas colunas ═══════════════════════════════════════ */}
-          <div style={{display:'grid', gridTemplateColumns:'1fr 380px', gap:16, alignItems:'start'}}>
+          <div style={{display:'grid', gridTemplateColumns:'minmax(0,1fr) clamp(280px, 30%, 380px)', gap:16, alignItems:'start'}}>
 
             {/* ── COL ESQUERDA: Tarefas ── */}
             <div style={{background:'#fff', borderRadius:16, border:'1px solid var(--border)', overflow:'hidden'}}>
@@ -1551,7 +1570,7 @@
           {/* ══ MODAL DE EDIÇÃO DE TAREFA ══ */}
           {tarefaEditando && (
             <div style={{position:'fixed', inset:0, background:'rgba(0,0,0,.45)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:80, padding:16}} onClick={()=>setTarefaEditando(null)}>
-              <div style={{background:'#fff', borderRadius:18, width:'100%', maxWidth:480, boxShadow:'0 24px 64px rgba(0,0,0,.22)', overflow:'hidden', animation:'fadeUp .3s ease'}} onClick={e=>e.stopPropagation()}>
+              <div style={{background:'#fff', borderRadius:18, width:'100%', maxWidth:480, maxHeight:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 24px 64px rgba(0,0,0,.22)', overflow:'hidden', animation:'fadeUp .3s ease'}} onClick={e=>e.stopPropagation()}>
                 <div style={{background:'linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%)', padding:'18px 24px', display:'flex', alignItems:'center', justifyContent:'space-between'}}>
                   <div style={{display:'flex', alignItems:'center', gap:10}}>
                     <div style={{width:34, height:34, borderRadius:9, background:'rgba(200,151,10,.2)', display:'flex', alignItems:'center', justifyContent:'center', color:'#e6ac12'}}><Icons.Edit/></div>
@@ -1562,7 +1581,7 @@
                   </div>
                   <button onClick={()=>setTarefaEditando(null)} style={{width:30, height:30, borderRadius:7, border:'none', background:'rgba(255,255,255,.1)', color:'rgba(255,255,255,.6)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}><Icons.X/></button>
                 </div>
-                <div style={{padding:'20px 24px', display:'flex', flexDirection:'column', gap:14}}>
+                <div style={{padding:'20px 24px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1}}>
                   <div>
                     <label style={{display:'block', fontSize:10.5, fontWeight:700, letterSpacing:'.06em', textTransform:'uppercase', color:'var(--ink-muted)', marginBottom:5}}>Descricao da Tarefa</label>
                     <input style={{width:'100%', border:'1px solid var(--border)', borderRadius:9, padding:'10px 13px', fontSize:13, outline:'none', color:'var(--ink)', fontFamily:"'Outfit',sans-serif"}}
@@ -1624,7 +1643,7 @@
                     )}
                   </div>
                 </div>
-                <div style={{padding:'14px 24px 20px', display:'flex', gap:10, borderTop:'1px solid var(--border)', background:'var(--surface-2)'}}>
+                <div style={{padding:'14px 24px 20px', display:'flex', gap:10, borderTop:'1px solid var(--border)', background:'var(--surface-2)', flexShrink:0}}>
                   <button onClick={()=>setTarefaEditando(null)} style={{flex:1, padding:'10px', borderRadius:9, border:'1px solid var(--border)', background:'transparent', color:'var(--ink-muted)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:"'Outfit',sans-serif"}}>Cancelar</button>
                   <button onClick={salvarEdicao} style={{flex:2, padding:'10px', borderRadius:9, border:'none', background:'var(--navy)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7, fontFamily:"'Outfit',sans-serif"}}><Icons.Check/> Salvar Alteracoes</button>
                 </div>
@@ -1882,7 +1901,7 @@
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
       return (
-        <div className="min-h-screen pb-24 fade-in" style={{background:'var(--surface)'}}>
+        <div className="fade-in" style={{background:'#f5f7fb', height:'100%', display:'flex', flexDirection:'column', overflow:'hidden'}}>
 
           {/* ── HEADER ── */}
           <header className="glass-header sticky top-0 z-40 px-4 md:px-8 py-3.5 flex justify-between items-center no-print">
@@ -1968,7 +1987,7 @@
             </div>
           </div>
 
-          <main className="w-full py-7" style={{paddingLeft: aba==='processos' ? 0 : 'clamp(16px,3vw,32px)', paddingRight: aba==='processos' ? 0 : 'clamp(16px,3vw,32px)'}}>
+          <main className="w-full custom-scrollbar" style={{paddingLeft: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(16px,3vw,40px)', paddingRight: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(16px,3vw,40px)', paddingTop: (aba==='processos'||aba==='agenda') ? 0 : '28px', paddingBottom: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(24px,4vw,48px)', flex:1, overflowY:'auto'}}>
             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
             {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
@@ -1990,9 +2009,10 @@
 
             {/* ── DASHBOARD ── */}
             {aba === 'dashboard' && (
+              <div style={{maxWidth:1440, margin:'0 auto'}}>
               <div className="space-y-6 fade-up">
                 {/* Stat cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                   {[
                     { label:'Total de Casos', val: stats.total,    sub:'Base de clientes ativa', color:'var(--ink)', dot:'var(--ink)' },
                     { label:'Em Andamento',   val: stats.ativos,   sub:'Aguardando providências', color:'var(--navy-light)', dot:'var(--navy-light)' },
@@ -2000,7 +2020,7 @@
                     { label:'Arquivados',     val: stats.arquivados, sub:'Casos encerrados', color:'var(--accent)', dot:'var(--accent)' },
                   ].map(s => (
                     <div key={s.label} className="stat-card">
-                      <p className="font-serif text-4xl font-bold" style={{color:s.color}}>{s.val}</p>
+                      <p className="font-serif text-3xl font-bold" style={{color:s.color, fontSize:'clamp(1.6rem,3vw,2.25rem)'}}>{s.val}</p>
                       <p className="text-xs font-bold uppercase tracking-wider mt-1" style={{color:'var(--ink-muted)'}}>{s.label}</p>
                       <p className="text-xs mt-2" style={{color:'var(--ink-ghost)'}}>{s.sub}</p>
                     </div>
@@ -2090,6 +2110,7 @@
                   </div>
                 </div>
               </div>
+            </div>
             )}
 
             {/* ── AGENDA ── */}
@@ -2214,19 +2235,19 @@
                   {/* Responsável */}
                   <div className="relative shrink-0">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{color:'var(--ink-ghost)'}}><Icons.Filter/></span>
-                    <select className="input shrink-0" style={{paddingLeft:30, paddingTop:8, paddingBottom:8, fontSize:13, width:148}}
+                    <select className="input shrink-0" style={{paddingLeft:30, paddingTop:8, paddingBottom:8, fontSize:13, width:'max(120px, 10vw)', maxWidth:148}}
                       value={filtroResponsavel} onChange={e=>setFiltroResponsavel(e.target.value)}>
                       <option value="Todos">Responsável</option>
                       {listaEquipe.map(nome => <option key={nome} value={nome}>{nome.split(' ')[0]}</option>)}
                     </select>
                   </div>
                   {/* Ramo */}
-                  <select className="input shrink-0" style={{paddingTop:8, paddingBottom:8, fontSize:13, width:130}} value={filtroRamo} onChange={e=>setFiltroRamo(e.target.value)}>
+                  <select className="input shrink-0" style={{paddingTop:8, paddingBottom:8, fontSize:13, width:'max(110px, 9vw)', maxWidth:130}} value={filtroRamo} onChange={e=>setFiltroRamo(e.target.value)}>
                     <option value="">Ramo</option>
                     {MATERIAS.map(m => <option key={m.valor} value={m.valor}>{m.valor}</option>)}
                   </select>
                   {/* Status */}
-                  <select className="input shrink-0" style={{paddingTop:8, paddingBottom:8, fontSize:13, width:130}} value={filtroStatus} onChange={e=>setFiltroStatus(e.target.value)}>
+                  <select className="input shrink-0" style={{paddingTop:8, paddingBottom:8, fontSize:13, width:'max(110px, 9vw)', maxWidth:130}} value={filtroStatus} onChange={e=>setFiltroStatus(e.target.value)}>
                     <option value="">Status</option>
                     <option value="Em Andamento">Em Andamento</option>
                     <option value="Arquivado">Arquivado</option>
@@ -2242,15 +2263,15 @@
 
                 {/* Table */}
                 <div style={{overflowX:'auto', width:'100%'}}>
-                  <table className="w-full tbl text-sm text-left" style={{tableLayout:'fixed', minWidth:'100%', width:'100%'}}>
+                  <table className="w-full tbl text-sm text-left" style={{tableLayout:'auto', minWidth:700}}>
                     <colgroup>
-                      <col style={{width:'12%'}}/>
-                      <col style={{width:'21%'}}/>
-                      <col style={{width:'19%'}}/>
-                      <col style={{width:'13%'}}/>
-                      <col style={{width:'9%'}}/>
                       <col style={{width:'14%'}}/>
+                      <col style={{width:'22%'}}/>
+                      <col style={{width:'18%'}}/>
                       <col style={{width:'12%'}}/>
+                      <col style={{width:'10%'}}/>
+                      <col style={{width:'14%'}}/>
+                      <col style={{width:'10%'}}/>
                     </colgroup>
                     <thead>
                       <tr>
