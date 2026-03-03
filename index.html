@@ -818,6 +818,7 @@
                 <div><p className="label">CPF</p><p className="font-mono" style={{color:'var(--ink-soft)'}}>{p.cpf || '-'}</p></div>
                 <div><p className="label">Telefone</p><p className="font-mono" style={{color:'var(--ink-soft)'}}>{p.telefone || '-'}</p></div>
                 <div><p className="label">Cidade / Estado</p><p style={{color:'var(--ink-soft)'}}>{p.cidade || '-'}{p.estado ? ` · ${p.estado}` : ''}</p></div>
+                {(p.rua || p.bairro) && <div className="col-span-2"><p className="label">Endereço</p><p style={{color:'var(--ink-soft)'}}>{[p.rua, p.numero, p.complemento].filter(Boolean).join(', ')}{p.bairro ? ` – ${p.bairro}` : ''}{p.cep ? ` · CEP ${p.cep}` : ''}</p></div>}
               </div>
             </div>
             {/* Dados processuais */}
@@ -848,6 +849,16 @@
                 </div>
               )}
             </div>
+            {(p.linkProcuracao || p.linkContrato || p.linkTermoRescisao) && (
+              <div className="p-5 rounded-xl" style={{background:'var(--surface-2)', border:'1px solid var(--border)'}}>
+                <h3 className="section-title flex gap-2 items-center mb-3"><Icons.Briefcase/> Links &amp; Documentos</h3>
+                <div className="flex flex-col gap-2">
+                  {p.linkProcuracao && <a href={p.linkProcuracao} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium" style={{color:'var(--navy-light)',textDecoration:'underline'}}>📄 Procuração</a>}
+                  {p.linkContrato && <a href={p.linkContrato} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium" style={{color:'var(--navy-light)',textDecoration:'underline'}}>📝 Contrato de Honorários</a>}
+                  {p.linkTermoRescisao && <a href={p.linkTermoRescisao} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-medium" style={{color:'#dc2626',textDecoration:'underline'}}>🔚 Termo de Rescisão</a>}
+                </div>
+              </div>
+            )}
             {p.descricao && (
               <div className="p-5 rounded-xl" style={{background:'var(--surface-2)', border:'1px solid var(--border)'}}>
                 <p className="label mb-2">Resumo do Caso</p>
@@ -1771,14 +1782,14 @@
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "",
-        rua: "", numero: "", bairro: "", cidade: "", estado: "PE – Pernambuco",
+        rua: "", numero: "", complemento: "", bairro: "", cep: "", cidade: "", estado: "PE – Pernambuco",
         parteContraria: "", tipoParteContraria: "Pessoa Física",
         numeroProcesso: "", semProcesso: false, ramo: "Cível", advogado: "Adiellyson Bomfim",
         prazo: "", statusProcessual: "Em Andamento",
         tribunal: "PJE-PE (TJ-PE)", vara: "",
         patologia: "", govLogin: "", govSenha: "",
         dataEntrada: "", statusBeneficio: "Em Análise", dataPericia: "", dataSocial: "",
-        procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "",
+        procuracaoEntregue: false, linkProcuracao: "", contratoEntregue: false, linkContrato: "", termoRescisaoEntregue: false, linkTermoRescisao: "", termoRescisaoEntregue: false, linkTermoRescisao: "",
         tipoPagamento: "Valor Cheio", qtdParcelas: 1, valorParcela: "", valorContrato: "",
         percentualContrato: "", valorEntrada: "", statusPagamento: "Pendente"
       };
@@ -2414,6 +2425,26 @@
                         <input className="input" placeholder="Cidade" value={formData.cidade} onChange={e=>setF({cidade: e.target.value})}/>
                       </div>
                       <div className="md:col-span-2">
+                        <label className="label">Logradouro (Rua / Avenida)</label>
+                        <input className="input" placeholder="Ex: Rua das Flores" value={formData.rua||''} onChange={e=>setF({rua: e.target.value})}/>
+                      </div>
+                      <div>
+                        <label className="label">Número</label>
+                        <input className="input" placeholder="Ex: 123" value={formData.numero||''} onChange={e=>setF({numero: e.target.value})}/>
+                      </div>
+                      <div>
+                        <label className="label">Complemento</label>
+                        <input className="input" placeholder="Apto, Bloco, Casa..." value={formData.complemento||''} onChange={e=>setF({complemento: e.target.value})}/>
+                      </div>
+                      <div>
+                        <label className="label">Bairro</label>
+                        <input className="input" placeholder="Ex: Centro" value={formData.bairro||''} onChange={e=>setF({bairro: e.target.value})}/>
+                      </div>
+                      <div>
+                        <label className="label">CEP</label>
+                        <input className="input font-mono" placeholder="00000-000" value={formData.cep||''} onChange={e=>setF({cep: e.target.value.replace(/\D/g,'').slice(0,8).replace(/(\d{5})(\d{0,3})/,'$1-$2').replace(/-$/,'')})}/>
+                      </div>
+                      <div className="md:col-span-2">
                         <label className="label">Resumo do Caso</label>
                         <textarea className="input" style={{height:80, resize:'none'}} placeholder="Descreva brevemente a demanda..." value={formData.descricao} onChange={e=>setF({descricao: e.target.value})}></textarea>
                       </div>
@@ -2521,6 +2552,7 @@
                         {[
                           { label:'Procuração', checkedKey:'procuracaoEntregue', linkKey:'linkProcuracao' },
                           { label:'Contrato',   checkedKey:'contratoEntregue',   linkKey:'linkContrato' },
+                        { label:'Termo de Rescisão', checkedKey:'termoRescisaoEntregue', linkKey:'linkTermoRescisao' },
                         ].map(item => (
                           <div key={item.label} className="p-3 rounded-xl" style={{background:'#fff', border:'1px solid var(--border)'}}>
                             <div className="flex items-center gap-2 mb-2">
