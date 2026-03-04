@@ -159,6 +159,12 @@
     @keyframes slideInRow { from{opacity:0;transform:translateX(-8px);} to{opacity:1;transform:translateX(0);} }
     .audit-row-new { animation: slideInRow .4s ease; background:#fefce8 !important; }
 
+    /* ── Processo subiu ao topo ── */
+    @keyframes riseUp { 0%{opacity:0;transform:translateY(10px);background:#fef9c3;} 60%{background:#fef9c3;} 100%{opacity:1;transform:translateY(0);background:transparent;} }
+    .processo-rose { animation: riseUp 1.2s cubic-bezier(0.16,1,0.3,1) both; }
+    @keyframes arrowBounce { 0%,100%{transform:translateY(0);opacity:1;} 50%{transform:translateY(-4px);opacity:.7;} }
+    .arrow-rose { display:inline-flex;align-items:center;color:#16a34a;font-size:13px;font-weight:700;animation:arrowBounce 1s ease 3; }
+
     /* ── Nav pill ── */
     .nav-pill {
       display: flex;
@@ -443,7 +449,8 @@
         { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
         { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração","Em mandado de segurança"] },
         { grupo: "✅ Cumprimento / Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
-        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
       "Criminal": [
         { grupo: "🔍 Investigativo", itens: ["Em inquérito policial","Em investigação preliminar","Aguardando indiciamento"] },
@@ -451,35 +458,40 @@
         { grupo: "🛡️ Medidas Cautelares", itens: ["Em habeas corpus","Em liberdade provisória","Em prisão preventiva","Em sursis processual","Em livramento condicional"] },
         { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em embargos de declaração","Em revisão criminal"] },
         { grupo: "✅ Execução Penal", itens: ["Transitado em julgado","Em execução de pena","Pena cumprida"] },
-        { grupo: "🗂️ Encerrado", itens: ["Absolvido","Extinto com resolução do mérito","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Absolvido","Extinto com resolução do mérito","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
       "Trabalhista": [
         { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação"] },
         { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Audiência designada","Em fase de instrução","Aguardando laudo pericial","Concluso para sentença"] },
         { grupo: "📣 Recursos", itens: ["Em recurso ordinário","Em recurso de revista","Em agravo de instrumento","Em embargos de declaração"] },
         { grupo: "✅ Execução", itens: ["Transitado em julgado","Em execução trabalhista","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
-        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
       "Previdenciário": [
         { grupo: "📋 Fase Administrativa", itens: ["Em análise administrativa","Aguardando perícia INSS","Benefício negado – recurso administrativo","Aguardando protocolo judicial"] },
         { grupo: "⚖️ Fase Judicial", itens: ["Em Andamento","Protocolado","Audiência designada","Em perícia judicial","Concluso para sentença"] },
         { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em embargos de declaração"] },
         { grupo: "✅ Cumprimento", itens: ["Transitado em julgado","Em cumprimento de sentença","Benefício concedido","Extinto com resolução do mérito"] },
-        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
       "Família e Sucessões": [
         { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação"] },
         { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Em contestação","Audiência de mediação designada","Audiência designada","Concluso para sentença"] },
         { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
         { grupo: "✅ Cumprimento / Acordo", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito"] },
-        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
       "Família": [
         { grupo: "📋 Fase Inicial", itens: ["Aguardando protocolo","Protocolado","Aguardando citação / intimação"] },
         { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Em contestação","Audiência de mediação designada","Audiência designada","Concluso para sentença"] },
         { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração"] },
         { grupo: "✅ Cumprimento / Acordo", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito"] },
-        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+        { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+        { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
       ],
     };
     const STATUS_GENERICO = [
@@ -487,7 +499,8 @@
       { grupo: "⚖️ Fase de Conhecimento", itens: ["Em Andamento","Em contestação","Em fase de instrução","Audiência designada","Aguardando laudo pericial","Em perícia","Concluso para sentença"] },
       { grupo: "📣 Recursos", itens: ["Em recurso","Em apelação","Em agravo de instrumento","Em embargos de declaração","Em mandado de segurança"] },
       { grupo: "✅ Cumprimento / Execução", itens: ["Transitado em julgado","Em cumprimento de sentença","Em acordo / conciliação","Extinto com resolução do mérito","Extinto sem resolução do mérito"] },
-      { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado"] },
+      { grupo: "🗂️ Encerrado", itens: ["Concluso","Arquivado","Suspenso","Cancelado","Rescindido"] },
+      { grupo: "⏳ Controle", itens: ["Pendente de Iniciar","Atrasado"] },
     ];
     const getStatusGrupos = (ramo) => STATUS_POR_AREA[ramo] || STATUS_GENERICO;
 
@@ -1779,6 +1792,7 @@
       const [listaEquipe, setListaEquipe] = useState(LISTA_EQUIPE_PADRAO);
       const [novoMembro, setNovoMembro] = useState("");
       const [editingUser, setEditingUser] = useState(null);
+      const [recentIds, setRecentIds] = useState(new Set());
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "",
@@ -1867,13 +1881,19 @@
         if (role === 'viewer') return alert("Sem permissão para criar/editar processos.");
         try {
           const dados = {...formData, atualizadoEm: new Date().toISOString()};
+          let targetId = editingId;
           if (editingId) {
             await db.collection(COL_PROCESSOS).doc(editingId).update(dados);
           } else {
             dados.criadoEm = new Date().toISOString();
-            await db.collection(COL_PROCESSOS).add(dados);
+            const ref = await db.collection(COL_PROCESSOS).add(dados);
+            targetId = ref.id;
           }
           setModal(false); setEditingId(null); setFormData(initialForm);
+          if (targetId) {
+            setRecentIds(prev => new Set([...prev, targetId]));
+            setTimeout(() => setRecentIds(prev => { const n = new Set(prev); n.delete(targetId); return n; }), 4000);
+          }
         } catch(e) { alert("Erro ao salvar: " + e.message); }
       };
       const apagar = async (id) => { if(confirm("Excluir este processo?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
@@ -2023,12 +2043,14 @@
               <div style={{maxWidth:1440, margin:'0 auto'}}>
               <div className="space-y-6 fade-up">
                 {/* Stat cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
                   {[
-                    { label:'Total de Casos', val: stats.total,    sub:'Base de clientes ativa', color:'var(--ink)', dot:'var(--ink)' },
-                    { label:'Em Andamento',   val: stats.ativos,   sub:'Aguardando providências', color:'var(--navy-light)', dot:'var(--navy-light)' },
-                    { label:'Suspensos',      val: processos.filter(p=>p.statusProcessual==='Suspenso').length, sub:'Processos suspensos', color:'#d97706', dot:'#d97706' },
-                    { label:'Arquivados',     val: stats.arquivados, sub:'Casos encerrados', color:'var(--accent)', dot:'var(--accent)' },
+                    { label:'Total de Casos',      val: stats.total,    sub:'Base de clientes ativa', color:'var(--ink)', dot:'var(--ink)' },
+                    { label:'Em Andamento',         val: stats.ativos,   sub:'Aguardando providências', color:'var(--navy-light)', dot:'var(--navy-light)' },
+                    { label:'Pendente de Iniciar',  val: processos.filter(p=>p.statusProcessual==='Pendente de Iniciar').length, sub:'Aguardando início', color:'#1d4ed8', dot:'#1d4ed8' },
+                    { label:'Atrasados',            val: processos.filter(p=>p.statusProcessual==='Atrasado').length, sub:'Requerem atenção', color:'#dc2626', dot:'#dc2626' },
+                    { label:'Suspensos',            val: processos.filter(p=>p.statusProcessual==='Suspenso').length, sub:'Processos suspensos', color:'#d97706', dot:'#d97706' },
+                    { label:'Arquivados',           val: stats.arquivados, sub:'Casos encerrados', color:'var(--accent)', dot:'var(--accent)' },
                   ].map(s => (
                     <div key={s.label} className="stat-card">
                       <p className="font-serif text-3xl font-bold" style={{color:s.color, fontSize:'clamp(1.6rem,3vw,2.25rem)'}}>{s.val}</p>
@@ -2081,8 +2103,8 @@
                     <p className="section-title flex items-center gap-2"><Icons.Chart/> Status dos Processos</p>
                     <div className="flex justify-center" style={{height:208}}>
                       {(() => {
-                        const statusLabels = ['Em Andamento','Arquivado','Suspenso','Cancelado'];
-                        const statusColors = ['#1e3d6e','#c8970a','#d97706','#dc2626'];
+                        const statusLabels = ['Em Andamento','Pendente de Iniciar','Atrasado','Arquivado','Suspenso','Cancelado','Rescindido'];
+                        const statusColors = ['#1e3d6e','#1d4ed8','#dc2626','#c8970a','#d97706','#ef4444','#9f1239'];
                         const statusData = statusLabels.map(s => {
                           if (s === 'Arquivado') return processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso').length;
                           if (s === 'Em Andamento') return processos.filter(p => p.statusProcessual === 'Em Andamento' || !p.statusProcessual).length;
@@ -2102,10 +2124,13 @@
                     <p className="section-title flex items-center gap-2"><Icons.Chart/> Resumo por Status</p>
                     <div className="space-y-3 mt-2">
                       {[
-                        { label:'Em Andamento', color:'var(--navy-light)', count: processos.filter(p => p.statusProcessual === 'Em Andamento' || !p.statusProcessual).length },
-                        { label:'Arquivado',    color:'#c8970a', count: processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso').length },
-                        { label:'Suspenso',     color:'#d97706', count: processos.filter(p => p.statusProcessual === 'Suspenso').length },
-                        { label:'Cancelado',    color:'#dc2626', count: processos.filter(p => p.statusProcessual === 'Cancelado').length },
+                        { label:'Em Andamento',      color:'var(--navy-light)', count: processos.filter(p => p.statusProcessual === 'Em Andamento' || !p.statusProcessual).length },
+                        { label:'Pendente de Iniciar',color:'#1d4ed8',          count: processos.filter(p => p.statusProcessual === 'Pendente de Iniciar').length },
+                        { label:'Atrasado',           color:'#dc2626',          count: processos.filter(p => p.statusProcessual === 'Atrasado').length },
+                        { label:'Arquivado',          color:'#c8970a',          count: processos.filter(p => p.statusProcessual === 'Arquivado' || p.statusProcessual === 'Concluso').length },
+                        { label:'Suspenso',           color:'#d97706',          count: processos.filter(p => p.statusProcessual === 'Suspenso').length },
+                        { label:'Cancelado',          color:'#dc2626',          count: processos.filter(p => p.statusProcessual === 'Cancelado').length },
+                        { label:'Rescindido',         color:'#9f1239',          count: processos.filter(p => p.statusProcessual === 'Rescindido').length },
                       ].filter(x => x.count > 0).map(item => (
                         <div key={item.label} className="flex items-center gap-3">
                           <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{background:item.color}}></div>
@@ -2261,9 +2286,12 @@
                   <select className="input shrink-0" style={{paddingTop:8, paddingBottom:8, fontSize:13, width:'max(110px, 9vw)', maxWidth:130}} value={filtroStatus} onChange={e=>setFiltroStatus(e.target.value)}>
                     <option value="">Status</option>
                     <option value="Em Andamento">Em Andamento</option>
+                    <option value="Pendente de Iniciar">Pendente de Iniciar</option>
+                    <option value="Atrasado">Atrasado</option>
                     <option value="Arquivado">Arquivado</option>
                     <option value="Suspenso">Suspenso</option>
                     <option value="Cancelado">Cancelado</option>
+                    <option value="Rescindido">Rescindido</option>
                     <option value="Transitado em julgado">Transitado em julgado</option>
                   </select>
                   {/* Botão Excel */}
@@ -2297,6 +2325,7 @@
                       )}
                       {processosFiltrados.map(p => {
                         const st = p.statusProcessual || "Em Andamento";
+                        const isRose = recentIds.has(p.id);
                         const stStyle = (st==='Arquivado'||st==='Concluso'||st.includes('julgado')||st.includes('Extinto'))
                           ? {background:'#eef2fa',color:'#1e3560',borderColor:'#c6d0e6'}
                           : st==='Em Andamento'
@@ -2305,17 +2334,26 @@
                           ? {background:'#fef3c7',color:'#92400e',borderColor:'#fde68a'}
                           : st==='Cancelado'
                           ? {background:'#fee2e2',color:'#b91c1c',borderColor:'#fca5a5'}
+                          : st==='Rescindido'
+                          ? {background:'#ffe4e6',color:'#9f1239',borderColor:'#fda4af'}
+                          : st==='Pendente de Iniciar'
+                          ? {background:'#eff6ff',color:'#1d4ed8',borderColor:'#bfdbfe'}
+                          : st==='Atrasado'
+                          ? {background:'#fef2f2',color:'#b91c1c',borderColor:'#fca5a5'}
                           : {background:'#eef2fa',color:'var(--ink-soft)',borderColor:'var(--border)'};
 
                         const isVencido = p.prazo && new Date(p.prazo) < new Date() && st !== 'Arquivado' && !st.includes('julgado');
                         const prazoStr = p.prazo ? new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
                         return (
-                          <tr key={p.id}>
+                          <tr key={p.id} className={isRose ? 'processo-rose' : ''}>
                             <td>
-                              <span className="badge" style={{...stStyle, fontSize:10.5}}>
-                                {st.length > 15 ? st.slice(0,14)+'…' : st}
-                              </span>
+                              <div style={{display:'flex',alignItems:'center',gap:4}}>
+                                {isRose && <span className="arrow-rose">↑</span>}
+                                <span className="badge" style={{...stStyle, fontSize:10.5}}>
+                                  {st.length > 15 ? st.slice(0,14)+'…' : st}
+                                </span>
+                              </div>
                             </td>
                             <td>
                               <p className="font-semibold truncate" style={{color:'var(--ink)'}}>{p.cliente}</p>
