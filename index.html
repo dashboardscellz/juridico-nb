@@ -2349,8 +2349,8 @@
                             <td>
                               <div style={{display:'flex',alignItems:'center',gap:4}}>
                                 {isRose && <span className="arrow-rose">↑</span>}
-                                <span className="badge" style={{...stStyle, fontSize:10.5}}>
-                                  {st.length > 15 ? st.slice(0,14)+'…' : st}
+                                <span className="badge" style={{...stStyle, fontSize:10.5, whiteSpace:'normal', wordBreak:'break-word', maxWidth:110, lineHeight:1.35, textAlign:'center'}}>
+                                  {st}
                                 </span>
                               </div>
                             </td>
