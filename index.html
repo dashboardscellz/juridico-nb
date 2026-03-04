@@ -1846,6 +1846,47 @@
         }
       }, [aba, role]);
 
+      // ── Auto-marcar "Atrasado" após 10 dias úteis em "Pendente de Iniciar" (exceto Criminal) ──
+      useEffect(() => {
+        if (!authOk || processos.length === 0) return;
+        const calcDiasUteis = (dataInicio) => {
+          const inicio = new Date(dataInicio);
+          const hoje = new Date();
+          hoje.setHours(0,0,0,0);
+          let count = 0;
+          const cursor = new Date(inicio);
+          cursor.setHours(0,0,0,0);
+          while (cursor < hoje) {
+            cursor.setDate(cursor.getDate() + 1);
+            const dow = cursor.getDay();
+            if (dow !== 0 && dow !== 6) count++;
+          }
+          return count;
+        };
+        const candidatos = processos.filter(p =>
+          p.statusProcessual === 'Pendente de Iniciar' &&
+          p.ramo !== 'Criminal' &&
+          p.criadoEm
+        );
+        const batch = db.batch();
+        let hasMudanca = false;
+        candidatos.forEach(p => {
+          const dias = calcDiasUteis(p.criadoEm);
+          if (dias >= 10) {
+            const ref = db.collection(COL_PROCESSOS).doc(p.id);
+            const agora = new Date().toISOString();
+            const historicoAtual = p.historico || [];
+            batch.update(ref, {
+              statusProcessual: 'Atrasado',
+              atualizadoEm: agora,
+              historico: [...historicoAtual, { acao: 'Auto-marcado Atrasado', usuario: 'Sistema', data: agora }]
+            });
+            hasMudanca = true;
+          }
+        });
+        if (hasMudanca) batch.commit().catch(e => console.error("Erro auto-atrasado:", e));
+      }, [processos, authOk]);
+
       const stats = useMemo(() => {
         const total = processos.length;
         const ativos = processos.filter(p => p.statusProcessual === 'Em Andamento' || (!p.statusProcessual)).length;
