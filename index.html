@@ -2222,35 +2222,6 @@
         } catch(e) { console.error('[WhatsApp] Erro:', e); }
       };
 
-      // ── Verificação de eventos de hoje ao carregar ─────────────
-      useEffect(() => {
-        if (!authOk) return;
-        const verificarEventosHoje = async () => {
-          try {
-            const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
-            const snap = await db.collection(COL_AGENDA_EVENTOS)
-              .where('dataEvento', '==', hoje)
-              .where('statusEnvio', '==', false)
-              .get();
-            if (snap.empty) return;
-            for (const doc of snap.docs) {
-              const ev = { id: doc.id, ...doc.data() };
-              if (!ev.clienteTel) continue;
-              try {
-                const tel  = ev.clienteTel.replace(/\D/g,'');
-                const hora = ev.horaEvento ? ` às ${ev.horaEvento}` : '';
-                const msg  = `Olá, ${ev.clienteNome}! ⚖️ Lembrete: você tem ${ev.tipoEvento} agendado para hoje${hora}. Qualquer dúvida, estamos à disposição!`;
-                await db.collection(COL_AGENDA_EVENTOS).doc(ev.id).update({ statusEnvio: true });
-                navigator.clipboard.writeText(msg).catch(()=>{});
-                window.open(`https://wa.me/55${tel}`, '_blank');
-              } catch(evErr) { console.error('[Agenda] Erro evento:', evErr); }
-            }
-          } catch(e) { console.error('[Agenda] Erro verificação hoje:', e); }
-        };
-        const t = setTimeout(verificarEventosHoje, 3000);
-        return () => clearTimeout(t);
-      }, [authOk]);
-
       useEffect(() => {
         const handleEsc = (e) => {
           if (e.key === 'Escape') { setModal(false); setCalcModal(false); setFichaModal(null); setModalSenha(false); setAuditoriaModal(false); }
