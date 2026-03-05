@@ -2166,8 +2166,9 @@
       const [editingUser, setEditingUser] = useState(null);
       const [recentIds, setRecentIds] = useState(new Set());
       const [pinnedId, setPinnedId] = useState(null);
-      const [agendaEventoModal, setAgendaEventoModal] = useState(null); // processo obj
+      const [agendaEventoModal, setAgendaEventoModal] = useState(null);
       const prevStatusRef = useRef({});
+      const [pendingWhatsApp, setPendingWhatsApp] = useState(null); // { nome, tel, msg }
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "",
@@ -2192,6 +2193,21 @@
       };
 
       // ── WhatsApp via wa.me ────────────────────────────────────
+      // Prepara a mensagem e guarda no estado — o usuário clica no botão que aparece na tela
+      const prepararWhatsApp = (processo, novoStatus) => {
+        try {
+          const nome  = processo.cliente || 'Cliente';
+          const fase  = novoStatus || processo.statusProcessual || '';
+          const trad  = TRADUCOES_JURIDICAS[fase] || 'Seu processo teve uma atualização. Entre em contato para mais detalhes.';
+          const dataHj = new Date().toLocaleDateString('pt-BR');
+          const msg   = `Olá, ${nome}! ⚖️ Informamos uma atualização no seu processo: ${fase}. Traduzindo: ${trad}. Data: ${dataHj}. Qualquer dúvida, estamos à disposição!`;
+          const tel   = (processo.telefone || '').replace(/\D/g,'');
+          if (!tel) { alert(`⚠️ ${nome} não tem telefone cadastrado.`); return; }
+          setPendingWhatsApp({ nome, tel, msg });
+        } catch(e) { console.error('[WhatsApp] Erro:', e); }
+      };
+
+      // Abre wa.me diretamente (para uso em onClick do usuário)
       const triggerWhatsAppNotification = (processo, novoStatus) => {
         try {
           const nome  = processo.cliente || 'Cliente';
@@ -2200,17 +2216,9 @@
           const dataHj = new Date().toLocaleDateString('pt-BR');
           const msg   = `Olá, ${nome}! ⚖️ Informamos uma atualização no seu processo: ${fase}. Traduzindo: ${trad}. Data: ${dataHj}. Qualquer dúvida, estamos à disposição!`;
           const tel   = (processo.telefone || '').replace(/\D/g,'');
-
-          if (!tel) {
-            alert(`⚠️ ${nome} não tem telefone cadastrado.`);
-            return;
-          }
-
-          const urlWA = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
-          window.open(urlWA, '_blank');
-        } catch(e) {
-          console.error('[WhatsApp] Erro:', e);
-        }
+          if (!tel) { alert(`⚠️ ${nome} não tem telefone cadastrado.`); return; }
+          window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+        } catch(e) { console.error('[WhatsApp] Erro:', e); }
       };
 
       // ── Verificação de eventos de hoje ao carregar ─────────────
@@ -2363,12 +2371,10 @@
             dados.historico = [...historicoAtual, { acao: 'Edição', usuario: user, data: agora }];
             await db.collection(COL_PROCESSOS).doc(editingId).update(dados);
 
-            // ── Gatilho: Mudança de status abre WhatsApp com mensagem pronta ──
+            // ── Gatilho: Mudança de status → mostra botão de notificação ──
             const statusMudou = statusAnterior && statusAnterior !== formData.statusProcessual;
             if (statusMudou && formData.telefone) {
-              const novoStatus = formData.statusProcessual;
-              const confirmar = window.confirm(`Status alterado para "${novoStatus}".\n\nDeseja notificar ${formData.cliente} via WhatsApp agora?`);
-              if (confirmar) triggerWhatsAppNotification({ ...formData, id: editingId }, novoStatus);
+              prepararWhatsApp({ ...formData, id: editingId }, formData.statusProcessual);
             }
           } else {
             dados.criadoEm = agora;
@@ -2527,6 +2533,44 @@
                 usuario={user}
                 onClose={()=>setAgendaEventoModal(null)}
               />
+            )}
+
+            {/* ── TOAST WHATSAPP ── */}
+            {pendingWhatsApp && (
+              <div className="fade-up" style={{
+                position:'fixed', bottom:80, left:'50%', transform:'translateX(-50%)',
+                zIndex:999, display:'flex', alignItems:'center', gap:12,
+                background:'#0d1b35', color:'#fff', borderRadius:14,
+                padding:'14px 20px', boxShadow:'0 8px 32px rgba(0,0,0,.35)',
+                border:'1px solid rgba(255,255,255,.1)', maxWidth:460, width:'calc(100% - 32px)'
+              }}>
+                <div style={{fontSize:22, flexShrink:0}}>📱</div>
+                <div style={{flex:1, minWidth:0}}>
+                  <p style={{fontSize:13, fontWeight:700, margin:0}}>Status atualizado!</p>
+                  <p style={{fontSize:11, marginTop:2, color:'rgba(255,255,255,.65)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    Notificar <strong style={{color:'#fcd34d'}}>{pendingWhatsApp.nome}</strong> sobre a mudança?
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    window.open(`https://wa.me/55${pendingWhatsApp.tel}?text=${encodeURIComponent(pendingWhatsApp.msg)}`, '_blank');
+                    setPendingWhatsApp(null);
+                  }}
+                  style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    background:'#25D366', color:'#fff', border:'none',
+                    borderRadius:9, padding:'8px 14px', fontSize:12,
+                    fontWeight:700, cursor:'pointer', flexShrink:0,
+                    fontFamily:'Outfit, sans-serif'
+                  }}>
+                  <Icons.WhatsApp/> Enviar
+                </button>
+                <button
+                  onClick={() => setPendingWhatsApp(null)}
+                  style={{background:'rgba(255,255,255,.1)', border:'none', borderRadius:7, padding:'6px 10px', color:'rgba(255,255,255,.6)', cursor:'pointer', fontSize:11, flexShrink:0, fontFamily:'Outfit, sans-serif'}}>
+                  Agora não
+                </button>
+              </div>
             )}
 
             {/* ── MODAL SENHA ── */}
