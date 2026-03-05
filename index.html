@@ -2535,41 +2535,79 @@
               />
             )}
 
-            {/* ── TOAST WHATSAPP ── */}
+            {/* ── MODAL WHATSAPP ── */}
             {pendingWhatsApp && (
-              <div className="fade-up" style={{
-                position:'fixed', bottom:80, left:'50%', transform:'translateX(-50%)',
-                zIndex:999, display:'flex', alignItems:'center', gap:12,
-                background:'#0d1b35', color:'#fff', borderRadius:14,
-                padding:'14px 20px', boxShadow:'0 8px 32px rgba(0,0,0,.35)',
-                border:'1px solid rgba(255,255,255,.1)', maxWidth:460, width:'calc(100% - 32px)'
-              }}>
-                <div style={{fontSize:22, flexShrink:0}}>📱</div>
-                <div style={{flex:1, minWidth:0}}>
-                  <p style={{fontSize:13, fontWeight:700, margin:0}}>Status atualizado!</p>
-                  <p style={{fontSize:11, marginTop:2, color:'rgba(255,255,255,.65)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
-                    Notificar <strong style={{color:'#fcd34d'}}>{pendingWhatsApp.nome}</strong> sobre a mudança?
-                  </p>
+              <div className="modal-backdrop fade-in" style={{zIndex:90}}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full fade-up" style={{maxWidth:460, border:'1px solid var(--border)'}}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-6 py-4 rounded-t-2xl" style={{background:'#25D366'}}>
+                    <div className="flex items-center gap-3">
+                      <Icons.WhatsApp/>
+                      <span className="font-bold text-white text-sm">Notificação WhatsApp</span>
+                    </div>
+                    <button onClick={()=>setPendingWhatsApp(null)} style={{background:'rgba(255,255,255,.2)',border:'none',borderRadius:7,padding:'4px 8px',color:'#fff',cursor:'pointer',fontSize:18,lineHeight:1}}>×</button>
+                  </div>
+
+                  <div className="p-5 space-y-4">
+                    {/* Info cliente */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl" style={{background:'var(--surface-2)',border:'1px solid var(--border)'}}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{background:'var(--navy-light)'}}>
+                        {pendingWhatsApp.nome.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold" style={{color:'var(--ink)'}}>{pendingWhatsApp.nome}</p>
+                        <p className="text-xs" style={{color:'var(--ink-ghost)'}}>+55 {pendingWhatsApp.tel}</p>
+                      </div>
+                    </div>
+
+                    {/* Mensagem editável */}
+                    <div>
+                      <label className="label">Mensagem — edite se quiser antes de enviar</label>
+                      <textarea
+                        className="input"
+                        rows={6}
+                        style={{resize:'vertical', fontSize:13, lineHeight:1.6}}
+                        value={pendingWhatsApp.msg}
+                        onChange={e => setPendingWhatsApp(p => ({...p, msg: e.target.value}))}
+                      />
+                    </div>
+
+                    {/* Botões */}
+                    <div className="flex gap-2">
+                      {/* Copiar */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(pendingWhatsApp.msg)
+                            .then(() => alert('✅ Mensagem copiada! Cole direto no WhatsApp.'))
+                            .catch(() => alert('Selecione e copie o texto manualmente.'));
+                        }}
+                        className="btn-ghost flex-1 justify-center"
+                        style={{fontSize:12}}>
+                        📋 Copiar texto
+                      </button>
+
+                      {/* Abrir WhatsApp */}
+                      <button
+                        onClick={() => {
+                          const url = `https://wa.me/55${pendingWhatsApp.tel}?text=${encodeURIComponent(pendingWhatsApp.msg)}`;
+                          window.open(url, '_blank');
+                          setPendingWhatsApp(null);
+                        }}
+                        style={{
+                          flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
+                          background:'#25D366', color:'#fff', border:'none', borderRadius:9,
+                          padding:'11px 16px', fontSize:13, fontWeight:700,
+                          cursor:'pointer', fontFamily:'Outfit, sans-serif'
+                        }}>
+                        <Icons.WhatsApp/> Abrir WhatsApp
+                      </button>
+                    </div>
+
+                    <p className="text-center text-xs" style={{color:'var(--ink-ghost)'}}>
+                      Se o texto não aparecer no WhatsApp, use "Copiar texto" e cole manualmente.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    window.open(`https://wa.me/55${pendingWhatsApp.tel}?text=${encodeURIComponent(pendingWhatsApp.msg)}`, '_blank');
-                    setPendingWhatsApp(null);
-                  }}
-                  style={{
-                    display:'flex', alignItems:'center', gap:6,
-                    background:'#25D366', color:'#fff', border:'none',
-                    borderRadius:9, padding:'8px 14px', fontSize:12,
-                    fontWeight:700, cursor:'pointer', flexShrink:0,
-                    fontFamily:'Outfit, sans-serif'
-                  }}>
-                  <Icons.WhatsApp/> Enviar
-                </button>
-                <button
-                  onClick={() => setPendingWhatsApp(null)}
-                  style={{background:'rgba(255,255,255,.1)', border:'none', borderRadius:7, padding:'6px 10px', color:'rgba(255,255,255,.6)', cursor:'pointer', fontSize:11, flexShrink:0, fontFamily:'Outfit, sans-serif'}}>
-                  Agora não
-                </button>
               </div>
             )}
 
@@ -3101,7 +3139,7 @@
                                 const proc = editingId
                                   ? { ...formData, id: editingId }
                                   : { ...formData, id: 'novo' };
-                                triggerWhatsAppNotification(proc, formData.statusProcessual);
+                                prepararWhatsApp(proc, formData.statusProcessual);
                               }}
                               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0 transition-all"
                               style={{background:'#dcfce7',color:'#16a34a',border:'1.5px solid #bbf7d0',whiteSpace:'nowrap'}}
