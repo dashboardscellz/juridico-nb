@@ -2217,7 +2217,8 @@
           const msg   = `Olá, ${nome}! ⚖️ Informamos uma atualização no seu processo: ${fase}. Traduzindo: ${trad}. Data: ${dataHj}. Qualquer dúvida, estamos à disposição!`;
           const tel   = (processo.telefone || '').replace(/\D/g,'');
           if (!tel) { alert(`⚠️ ${nome} não tem telefone cadastrado.`); return; }
-          window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+          navigator.clipboard.writeText(msg).catch(()=>{});
+          window.open(`https://wa.me/55${tel}`, '_blank');
         } catch(e) { console.error('[WhatsApp] Erro:', e); }
       };
 
@@ -2240,7 +2241,8 @@
                 const hora = ev.horaEvento ? ` às ${ev.horaEvento}` : '';
                 const msg  = `Olá, ${ev.clienteNome}! ⚖️ Lembrete: você tem ${ev.tipoEvento} agendado para hoje${hora}. Qualquer dúvida, estamos à disposição!`;
                 await db.collection(COL_AGENDA_EVENTOS).doc(ev.id).update({ statusEnvio: true });
-                window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+                navigator.clipboard.writeText(msg).catch(()=>{});
+                window.open(`https://wa.me/55${tel}`, '_blank');
               } catch(evErr) { console.error('[Agenda] Erro evento:', evErr); }
             }
           } catch(e) { console.error('[Agenda] Erro verificação hoje:', e); }
@@ -2572,40 +2574,27 @@
                       />
                     </div>
 
-                    {/* Botões */}
-                    <div className="flex gap-2">
-                      {/* Copiar */}
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(pendingWhatsApp.msg)
-                            .then(() => alert('✅ Mensagem copiada! Cole direto no WhatsApp.'))
-                            .catch(() => alert('Selecione e copie o texto manualmente.'));
-                        }}
-                        className="btn-ghost flex-1 justify-center"
-                        style={{fontSize:12}}>
-                        📋 Copiar texto
-                      </button>
+                    {/* Botão principal */}
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(pendingWhatsApp.msg).catch(()=>{});
+                        window.open(`https://wa.me/55${pendingWhatsApp.tel}`, '_blank');
+                        setPendingWhatsApp(null);
+                      }}
+                      style={{
+                        width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                        background:'#25D366', color:'#fff', border:'none', borderRadius:9,
+                        padding:'13px 16px', fontSize:14, fontWeight:700,
+                        cursor:'pointer', fontFamily:'Outfit, sans-serif'
+                      }}>
+                      <Icons.WhatsApp/> Copiar mensagem e abrir WhatsApp
+                    </button>
 
-                      {/* Abrir WhatsApp */}
-                      <button
-                        onClick={() => {
-                          const url = `https://wa.me/55${pendingWhatsApp.tel}?text=${encodeURIComponent(pendingWhatsApp.msg)}`;
-                          window.open(url, '_blank');
-                          setPendingWhatsApp(null);
-                        }}
-                        style={{
-                          flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7,
-                          background:'#25D366', color:'#fff', border:'none', borderRadius:9,
-                          padding:'11px 16px', fontSize:13, fontWeight:700,
-                          cursor:'pointer', fontFamily:'Outfit, sans-serif'
-                        }}>
-                        <Icons.WhatsApp/> Abrir WhatsApp
-                      </button>
+                    <div className="rounded-xl p-3 text-center" style={{background:'#fefce8', border:'1px solid #fde68a'}}>
+                      <p className="text-xs font-bold" style={{color:'var(--accent-dark)'}}>
+                        ✅ O texto já vai copiado — só abrir o chat e colar com <kbd style={{background:'#fff', border:'1px solid #fde68a', borderRadius:4, padding:'1px 5px'}}>Ctrl+V</kbd>
+                      </p>
                     </div>
-
-                    <p className="text-center text-xs" style={{color:'var(--ink-ghost)'}}>
-                      Se o texto não aparecer no WhatsApp, use "Copiar texto" e cole manualmente.
-                    </p>
                   </div>
                 </div>
               </div>
