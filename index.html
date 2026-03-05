@@ -419,6 +419,66 @@
     const COL_PROFISSIONAIS= 'equipe_nomes_nb';
     const COL_AUDITORIA    = 'auditoria_acessos_nb';
     const COL_AGENDA       = 'agenda_advocacia';
+    const COL_AGENDA_EVENTOS = 'agenda_eventos';
+
+    // ─── WHATSAPP CONFIG ─────────────────────────────────────────
+    // Envio via wa.me — abre o WhatsApp com a mensagem já pronta, só clicar em Enviar.
+
+    // ─── DICIONÁRIO DE TRADUÇÕES JURÍDICAS ──────────────────────
+    const TRADUCOES_JURIDICAS = {
+      // Fase Inicial
+      "Aguardando protocolo":          "Estamos preparando os documentos para dar entrada no seu processo.",
+      "Protocolado":                   "O processo foi entregue oficialmente ao órgão competente.",
+      "Aguardando citação / intimação":"O processo está aguardando o aviso oficial para a outra parte.",
+      "Citado – aguardando prazo":     "A outra parte foi notificada e tem prazo para responder.",
+      // Fase de Conhecimento
+      "Em Andamento":                  "Seu processo está ativo e sendo acompanhado pela equipe.",
+      "Em contestação":                "A outra parte apresentou sua defesa e estamos analisando.",
+      "Em fase de instrução":          "Estamos na fase de coleta de provas e documentos.",
+      "Audiência designada":           "Uma audiência foi marcada para discutir seu caso com o juiz.",
+      "Aguardando laudo pericial":     "Um especialista está analisando o caso e preparando um relatório técnico.",
+      "Em perícia":                    "Um perito nomeado pelo juiz está avaliando o caso.",
+      "Concluso para sentença":        "O processo está na mesa do juiz aguardando a decisão final.",
+      "Concluso para Despacho":        "O processo está na mesa do juiz aguardando uma ordem.",
+      // Recursos
+      "Em recurso":                    "Entramos com um pedido de revisão da decisão em instância superior.",
+      "Em apelação":                   "Estamos contestando a sentença perante um tribunal superior.",
+      "Em agravo de instrumento":      "Apresentamos um recurso urgente contra uma decisão do processo.",
+      "Em embargos de declaração":     "Pedimos esclarecimentos sobre a decisão judicial proferida.",
+      "Em mandado de segurança":       "Utilizamos um recurso especial para proteger um direito líquido e certo.",
+      "Em recurso ordinário":          "Estamos recorrendo da sentença pelo caminho padrão trabalhista.",
+      "Em recurso de revista":         "Recorremos ao Tribunal Superior do Trabalho para revisão.",
+      "Em habeas corpus":              "Estamos pedindo ao juiz para garantir a liberdade do cliente.",
+      "Em revisão criminal":           "Pedimos que toda a condenação seja reavaliada.",
+      "Em recurso administrativo":     "Estamos questionando a decisão pela via administrativa, sem processo judicial.",
+      // Cumprimento / Execução
+      "Transitado em julgado":         "A decisão se tornou definitiva — não cabe mais recurso.",
+      "Em cumprimento de sentença":    "O juiz determinou o cumprimento da decisão e estamos cobrando.",
+      "Em acordo / conciliação":       "As partes chegaram a um acordo amigável.",
+      "Extinto com resolução do mérito":"O processo foi encerrado com análise e julgamento do pedido.",
+      "Extinto sem resolução do mérito":"O processo foi encerrado por questões técnicas, sem julgamento do mérito.",
+      "Em execução trabalhista":       "Estamos cobrando judicialmente o valor que lhe é devido.",
+      "Em execução de pena":           "A sentença penal está sendo cumprida conforme determinado.",
+      // Encerrado
+      "Concluso":                      "O processo foi finalizado pela equipe jurídica.",
+      "Arquivado":                      "O processo foi encerrado e guardado nos arquivos.",
+      "Rescindido":                     "O contrato com o escritório foi encerrado pelas partes.",
+      "Pena cumprida":                  "A sentença penal foi integralmente cumprida.",
+      "Absolvido":                      "O cliente foi declarado inocente pelo juiz.",
+      // Controle
+      "Pendente de Iniciar":           "O processo ainda não foi protocolado, mas está em preparação.",
+      "Atrasado":                       "O processo precisa de atenção urgente para evitar perdas de prazo.",
+      // Previdenciário
+      "Em análise administrativa":     "O INSS está analisando seu pedido de benefício.",
+      "Aguardando perícia INSS":       "Uma consulta médica com perito do INSS foi agendada.",
+      "Benefício negado – recurso administrativo":"O INSS negou o benefício e entramos com recurso.",
+      "Aguardando protocolo judicial": "Vamos protocolar o pedido perante o juiz.",
+      "Benefício concedido":           "🎉 Seu benefício foi aprovado! Em breve você receberá o pagamento.",
+      // Família
+      "Audiência de mediação designada":"Uma reunião de tentativa de acordo foi marcada.",
+      // Trabalho / Social
+      "Audiência de instrução":        "Uma audiência para ouvir testemunhas e provas foi marcada.",
+    };
 
     // ─── MATÉRIAS ───────────────────────────────────────────────
     const MATERIAS = [
@@ -637,6 +697,8 @@
       ChevRight:() => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>,
       History:  () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
       Agenda:   () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+      Calendar: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /><circle cx="12" cy="14" r="2" fill="currentColor" stroke="none"/></svg>,
+      Bell:     () => <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>,
     };
 
     // ─── AUDITORIA HELPER ────────────────────────────────────────
@@ -651,6 +713,316 @@
           epoch: agora.getTime()
         });
       } catch(e) { console.error("Erro auditoria:", e); }
+    };
+
+    // ════════════════════════════════════════════════════════════
+    //  AGENDAR COMPROMISSO MODAL
+    // ════════════════════════════════════════════════════════════
+    const AgendarCompromissoModal = ({ processo, onClose, usuario }) => {
+      const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      const [form, setForm] = React.useState({
+        dataEvento: hoje,
+        horaEvento: '',
+        tipoEvento: 'Audiência',
+        observacao: '',
+      });
+      const [salvando, setSalvando] = React.useState(false);
+
+      const salvarEvento = async () => {
+        if (!form.dataEvento) return alert('Informe a data do evento.');
+        setSalvando(true);
+        try {
+          await db.collection(COL_AGENDA_EVENTOS).add({
+            processoId:  processo.id,
+            clienteNome: processo.cliente || '',
+            clienteTel:  processo.telefone || '',
+            dataEvento:  form.dataEvento,
+            horaEvento:  form.horaEvento,
+            tipoEvento:  form.tipoEvento,
+            observacao:  form.observacao,
+            statusEnvio: false,
+            criadoEm:    new Date().toISOString(),
+            criadoPor:   usuario,
+          });
+          alert('Compromisso agendado com sucesso!');
+          onClose();
+        } catch(e) {
+          alert('Erro ao agendar: ' + e.message);
+        }
+        setSalvando(false);
+      };
+
+      const TIPOS = ['Audiência', 'Perícia', 'Social', 'Reunião', 'Prazo'];
+      const TIPO_CORES = { Audiência:'#1e3d6e', Perícia:'#7e22ce', Social:'#16a34a', Reunião:'#c8970a', Prazo:'#dc2626' };
+
+      return (
+        <div className="modal-backdrop fade-in" style={{zIndex:80}}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full fade-up" style={{maxWidth:480, border:'1px solid var(--border)'}}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5" style={{borderBottom:'1px solid var(--border)', background:'linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%)', borderRadius:'16px 16px 0 0'}}>
+              <div>
+                <h3 className="font-serif text-lg text-white">Agendar Compromisso</h3>
+                <p className="text-xs mt-0.5" style={{color:'#fcd34d'}}>
+                  {processo.cliente} · {processo.telefone || 'Sem telefone'}
+                </p>
+              </div>
+              <button onClick={onClose} className="btn-icon" style={{color:'rgba(255,255,255,.7)'}}><Icons.X/></button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              {/* Tipo */}
+              <div>
+                <label className="label">Tipo de Evento</label>
+                <div className="flex gap-2 flex-wrap mt-1">
+                  {TIPOS.map(t => (
+                    <button key={t} onClick={()=>setForm(f=>({...f,tipoEvento:t}))}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                      style={form.tipoEvento===t
+                        ? {background:TIPO_CORES[t]||'var(--ink)', color:'#fff', borderColor:'transparent', boxShadow:`0 2px 8px ${TIPO_CORES[t]||'var(--ink)'}44`}
+                        : {background:'var(--surface-2)', color:'var(--ink-muted)', borderColor:'var(--border)'}}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Data e Hora */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Data do Evento</label>
+                  <input type="date" className="input" value={form.dataEvento} onChange={e=>setForm(f=>({...f,dataEvento:e.target.value}))}/>
+                </div>
+                <div>
+                  <label className="label">Hora</label>
+                  <input type="time" className="input" value={form.horaEvento} onChange={e=>setForm(f=>({...f,horaEvento:e.target.value}))}/>
+                </div>
+              </div>
+
+              {/* Observação */}
+              <div>
+                <label className="label">Observação (opcional)</label>
+                <textarea className="input" rows={2} style={{resize:'none'}} placeholder="Detalhes do compromisso..."
+                  value={form.observacao} onChange={e=>setForm(f=>({...f,observacao:e.target.value}))}/>
+              </div>
+
+              {/* Info do cliente */}
+              <div className="rounded-xl p-3 flex items-center gap-3" style={{background:'var(--surface-2)', border:'1px solid var(--border)'}}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{background:'var(--navy-light)'}}>
+                  {(processo.cliente||'?').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold" style={{color:'var(--ink)'}}>{processo.cliente}</p>
+                  <p className="text-xs mt-0.5" style={{color:'var(--ink-ghost)'}}>{processo.telefone || 'Telefone não cadastrado'}</p>
+                </div>
+                {processo.telefone && (
+                  <button onClick={()=>openWhatsApp(processo.telefone)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{background:'#dcfce7',color:'#16a34a',border:'1px solid #bbf7d0'}}>
+                    <Icons.WhatsApp/> WhatsApp
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={onClose} className="btn-ghost flex-1 justify-center">Cancelar</button>
+              <button onClick={salvarEvento} disabled={salvando} className="btn-primary justify-center" style={{flex:2}}>
+                <Icons.Calendar/> {salvando ? 'Salvando…' : 'Confirmar Agendamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ════════════════════════════════════════════════════════════
+    //  CALENDÁRIO TAB — visão geral de eventos
+    // ════════════════════════════════════════════════════════════
+    const CalendarioTab = ({ usuario }) => {
+      const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      const [dataSel, setDataSel]   = React.useState(hoje);
+      const [eventos, setEventos]   = React.useState([]);
+      const [loading, setLoading]   = React.useState(true);
+
+      useEffect(() => {
+        setLoading(true);
+        const unsub = db.collection(COL_AGENDA_EVENTOS)
+          .orderBy('dataEvento','asc')
+          .onSnapshot(snap => {
+            setEventos(snap.docs.map(d => ({id: d.id, ...d.data()})));
+            setLoading(false);
+          }, () => setLoading(false));
+        return () => unsub();
+      }, []);
+
+      const eventosDia = eventos.filter(e => e.dataEvento === dataSel);
+      const eventosFuturos = eventos.filter(e => e.dataEvento > hoje).slice(0, 5);
+
+      const TIPO_CFG = {
+        Audiência: { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe', emoji:'⚖️' },
+        Perícia:   { bg:'#faf5ff', color:'#7e22ce', border:'#e9d5ff', emoji:'🔬' },
+        Social:    { bg:'#f0fdf4', color:'#16a34a', border:'#bbf7d0', emoji:'🤝' },
+        Reunião:   { bg:'#fefce8', color:'#92400e', border:'#fde68a', emoji:'📋' },
+        Prazo:     { bg:'#fef2f2', color:'#b91c1c', border:'#fecaca', emoji:'⏰' },
+      };
+
+      const excluirEvento = async (id) => {
+        if (!confirm('Excluir este compromisso?')) return;
+        try { await db.collection(COL_AGENDA_EVENTOS).doc(id).delete(); }
+        catch(e) { alert('Erro ao excluir.'); }
+      };
+
+      const marcarEnviado = async (id) => {
+        try { await db.collection(COL_AGENDA_EVENTOS).doc(id).update({ statusEnvio: true }); }
+        catch(e) { alert('Erro ao marcar.'); }
+      };
+
+      const fmtData = iso => {
+        if (!iso) return '—';
+        const [y,m,d] = iso.split('-');
+        return `${d}/${m}/${y}`;
+      };
+
+      return (
+        <div style={{maxWidth:1200, margin:'0 auto', padding:'28px clamp(16px,3vw,40px) 80px'}}>
+          <div className="fade-up">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-serif text-2xl" style={{color:'var(--ink)'}}>Calendário de Eventos</h2>
+                <p className="text-xs mt-1 font-medium" style={{color:'var(--ink-muted)'}}>Audiências, perícias e compromissos vinculados aos processos</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="date" className="input" style={{maxWidth:180}} value={dataSel} onChange={e=>setDataSel(e.target.value)}/>
+                {dataSel !== hoje && (
+                  <button onClick={()=>setDataSel(hoje)} className="btn-ghost" style={{fontSize:12,padding:'8px 12px'}}>Hoje</button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              {/* Eventos do dia selecionado */}
+              <div className="lg:col-span-2">
+                <div className="card" style={{overflow:'hidden'}}>
+                  <div className="px-5 py-4 flex items-center gap-2" style={{borderBottom:'1px solid var(--border)', background:'var(--surface-2)'}}>
+                    <div className="w-4 h-4" style={{color:'var(--accent)'}}><Icons.Calendar/></div>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{color:'var(--ink-muted)'}}>
+                      {dataSel === hoje ? 'Hoje' : fmtData(dataSel)} · {eventosDia.length} evento{eventosDia.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="p-4" style={{minHeight:200}}>
+                    {loading ? (
+                      <div className="flex items-center justify-center py-12 gap-3" style={{color:'var(--ink-ghost)'}}>
+                        <div style={{width:18,height:18,border:'2px solid var(--gold)',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 1s linear infinite'}}></div>
+                        <span className="text-sm">Carregando…</span>
+                      </div>
+                    ) : eventosDia.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="text-3xl mb-3">📅</div>
+                        <p className="text-sm font-semibold" style={{color:'var(--ink-muted)'}}>Nenhum compromisso para esta data</p>
+                        <p className="text-xs mt-1" style={{color:'var(--ink-ghost)'}}>Use o formulário de processo para agendar</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {eventosDia.map(ev => {
+                          const cfg = TIPO_CFG[ev.tipoEvento] || TIPO_CFG['Reunião'];
+                          return (
+                            <div key={ev.id} className="flex items-start gap-4 p-4 rounded-xl transition-all"
+                              style={{background:cfg.bg, border:`1.5px solid ${cfg.border}`}}>
+                              <div className="text-2xl shrink-0">{cfg.emoji}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full" style={{background:cfg.color,color:'#fff'}}>{ev.tipoEvento}</span>
+                                  {ev.horaEvento && <span className="text-xs font-semibold" style={{color:cfg.color}}>🕐 {ev.horaEvento}</span>}
+                                  {ev.statusEnvio && <span className="text-xs px-2 py-0.5 rounded-full" style={{background:'#dcfce7',color:'#15803d',border:'1px solid #bbf7d0'}}>✓ Notificado</span>}
+                                </div>
+                                <p className="text-sm font-bold mt-1.5" style={{color:'var(--ink)'}}>{ev.clienteNome}</p>
+                                {ev.observacao && <p className="text-xs mt-0.5" style={{color:'var(--ink-muted)'}}>{ev.observacao}</p>}
+                                {ev.clienteTel && (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className="text-xs" style={{color:'var(--ink-ghost)'}}>{ev.clienteTel}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1.5 shrink-0">
+                                {ev.clienteTel && (
+                                  <button onClick={()=>openWhatsApp(ev.clienteTel)} title="WhatsApp"
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold"
+                                    style={{background:'#dcfce7',color:'#16a34a',border:'1px solid #bbf7d0'}}>
+                                    <Icons.WhatsApp/>
+                                  </button>
+                                )}
+                                {!ev.statusEnvio && (
+                                  <button onClick={()=>marcarEnviado(ev.id)} title="Marcar como notificado"
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold"
+                                    style={{background:'#f0fdf4',color:'#16a34a',border:'1px solid #bbf7d0'}}>
+                                    <Icons.Check/>
+                                  </button>
+                                )}
+                                <button onClick={()=>excluirEvento(ev.id)} title="Excluir"
+                                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
+                                  style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca'}}>
+                                  <Icons.Trash/>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Próximos eventos */}
+              <div>
+                <div className="card" style={{overflow:'hidden'}}>
+                  <div className="px-5 py-4 flex items-center gap-2" style={{borderBottom:'1px solid var(--border)', background:'var(--surface-2)'}}>
+                    <div className="w-4 h-4" style={{color:'var(--accent)'}}><Icons.Bell/></div>
+                    <span className="text-xs font-bold uppercase tracking-widest" style={{color:'var(--ink-muted)'}}>Próximos Eventos</span>
+                  </div>
+                  <div className="divide-y" style={{borderColor:'var(--border-soft)'}}>
+                    {loading ? (
+                      <div className="p-6 text-center text-xs" style={{color:'var(--ink-ghost)'}}>Carregando…</div>
+                    ) : eventosFuturos.length === 0 ? (
+                      <div className="p-6 text-center">
+                        <div className="text-2xl mb-2">🎉</div>
+                        <p className="text-xs font-medium" style={{color:'var(--ink-muted)'}}>Nenhum evento futuro</p>
+                      </div>
+                    ) : eventosFuturos.map(ev => {
+                      const cfg = TIPO_CFG[ev.tipoEvento] || TIPO_CFG['Reunião'];
+                      return (
+                        <div key={ev.id} className="p-4 flex items-start gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                          onClick={()=>setDataSel(ev.dataEvento)}>
+                          <div className="text-lg shrink-0">{cfg.emoji}</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold" style={{color:'var(--ink)'}}>{ev.clienteNome}</p>
+                            <p className="text-xs mt-0.5" style={{color:cfg.color}}>{ev.tipoEvento}</p>
+                            <p className="text-xs mt-0.5" style={{color:'var(--ink-ghost)'}}>{fmtData(ev.dataEvento)}{ev.horaEvento ? ' · ' + ev.horaEvento : ''}</p>
+                          </div>
+                          {ev.statusEnvio && <span className="text-xs" style={{color:'#16a34a'}}>✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Legenda */}
+                <div className="mt-4 card p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{color:'var(--ink-muted)'}}>Legenda</p>
+                  <div className="space-y-2">
+                    {Object.entries(TIPO_CFG).map(([tipo, cfg]) => (
+                      <div key={tipo} className="flex items-center gap-2">
+                        <span className="text-base">{cfg.emoji}</span>
+                        <span className="text-xs font-semibold" style={{color:cfg.color}}>{tipo}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
     };
 
     // ════════════════════════════════════════════════════════════
@@ -1794,6 +2166,8 @@
       const [editingUser, setEditingUser] = useState(null);
       const [recentIds, setRecentIds] = useState(new Set());
       const [pinnedId, setPinnedId] = useState(null);
+      const [agendaEventoModal, setAgendaEventoModal] = useState(null); // processo obj
+      const prevStatusRef = useRef({});
 
       const initialForm = {
         cliente: "", cpf: "", telefone: "", descricao: "",
@@ -1816,6 +2190,56 @@
         try { await registrarAuditoria(user, 'logout', role); } catch(e) {}
         window.location.reload();
       };
+
+      // ── WhatsApp via wa.me ────────────────────────────────────
+      const triggerWhatsAppNotification = (processo, novoStatus) => {
+        try {
+          const nome  = processo.cliente || 'Cliente';
+          const fase  = novoStatus || processo.statusProcessual || '';
+          const trad  = TRADUCOES_JURIDICAS[fase] || 'Seu processo teve uma atualização. Entre em contato para mais detalhes.';
+          const dataHj = new Date().toLocaleDateString('pt-BR');
+          const msg   = `Olá, ${nome}! ⚖️ Informamos uma atualização no seu processo: ${fase}. Traduzindo: ${trad}. Data: ${dataHj}. Qualquer dúvida, estamos à disposição!`;
+          const tel   = (processo.telefone || '').replace(/\D/g,'');
+
+          if (!tel) {
+            alert(`⚠️ ${nome} não tem telefone cadastrado.`);
+            return;
+          }
+
+          const urlWA = `https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`;
+          window.open(urlWA, '_blank');
+        } catch(e) {
+          console.error('[WhatsApp] Erro:', e);
+        }
+      };
+
+      // ── Verificação de eventos de hoje ao carregar ─────────────
+      useEffect(() => {
+        if (!authOk) return;
+        const verificarEventosHoje = async () => {
+          try {
+            const hoje = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+            const snap = await db.collection(COL_AGENDA_EVENTOS)
+              .where('dataEvento', '==', hoje)
+              .where('statusEnvio', '==', false)
+              .get();
+            if (snap.empty) return;
+            for (const doc of snap.docs) {
+              const ev = { id: doc.id, ...doc.data() };
+              if (!ev.clienteTel) continue;
+              try {
+                const tel  = ev.clienteTel.replace(/\D/g,'');
+                const hora = ev.horaEvento ? ` às ${ev.horaEvento}` : '';
+                const msg  = `Olá, ${ev.clienteNome}! ⚖️ Lembrete: você tem ${ev.tipoEvento} agendado para hoje${hora}. Qualquer dúvida, estamos à disposição!`;
+                await db.collection(COL_AGENDA_EVENTOS).doc(ev.id).update({ statusEnvio: true });
+                window.open(`https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+              } catch(evErr) { console.error('[Agenda] Erro evento:', evErr); }
+            }
+          } catch(e) { console.error('[Agenda] Erro verificação hoje:', e); }
+        };
+        const t = setTimeout(verificarEventosHoje, 3000);
+        return () => clearTimeout(t);
+      }, [authOk]);
 
       useEffect(() => {
         const handleEsc = (e) => {
@@ -1925,13 +2349,27 @@
           const agora = new Date().toISOString();
           const dados = {...formData, atualizadoEm: agora};
           let targetId = editingId;
+          let statusAnterior = null;
+          let faseAnterior   = null;
+
           if (editingId) {
             // Busca histórico existente para acrescentar
             const docSnap = await db.collection(COL_PROCESSOS).doc(editingId).get();
-            const historicoAtual = (docSnap.exists && docSnap.data().historico) ? docSnap.data().historico : [];
+            const dadosAntigos = docSnap.exists ? docSnap.data() : {};
+            const historicoAtual = dadosAntigos.historico || [];
+            statusAnterior = dadosAntigos.statusProcessual;
+            faseAnterior   = dadosAntigos.fase;
             dados.editadoPor = user;
             dados.historico = [...historicoAtual, { acao: 'Edição', usuario: user, data: agora }];
             await db.collection(COL_PROCESSOS).doc(editingId).update(dados);
+
+            // ── Gatilho: Mudança de status abre WhatsApp com mensagem pronta ──
+            const statusMudou = statusAnterior && statusAnterior !== formData.statusProcessual;
+            if (statusMudou && formData.telefone) {
+              const novoStatus = formData.statusProcessual;
+              const confirmar = window.confirm(`Status alterado para "${novoStatus}".\n\nDeseja notificar ${formData.cliente} via WhatsApp agora?`);
+              if (confirmar) triggerWhatsAppNotification({ ...formData, id: editingId }, novoStatus);
+            }
           } else {
             dados.criadoEm = agora;
             dados.criadoPor = user;
@@ -2013,9 +2451,10 @@
               {/* Nav pills — desktop */}
               <nav className="nav-pill hidden md:flex mr-2">
                 {[
-                  { id:'dashboard', label:'Dashboard', icon:<Icons.Chart/> },
-                  { id:'processos', label:'Processos', icon:<Icons.Briefcase/> },
-                  { id:'agenda',    label:'Agenda',    icon:<Icons.Agenda/> },
+                  { id:'dashboard',  label:'Dashboard',  icon:<Icons.Chart/> },
+                  { id:'processos',  label:'Processos',  icon:<Icons.Briefcase/> },
+                  { id:'agenda',     label:'Agenda',     icon:<Icons.Agenda/> },
+                  { id:'calendario', label:'Calendário', icon:<Icons.Calendar/> },
                   ...(role==='master'||role==='admin' ? [{ id:'equipe', label:'Equipe', icon:<Icons.Users/> }] : []),
                 ].map(n => (
                   <button key={n.id} onClick={()=>setAba(n.id)} className={`nav-pill-btn ${aba===n.id?'active':''}`}>
@@ -2063,9 +2502,10 @@
           <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden no-print" style={{background:'rgba(250,250,249,.95)', backdropFilter:'blur(12px)', borderTop:'1px solid var(--border)'}}>
             <div className="flex">
               {[
-                { id:'dashboard', label:'Dashboard', icon:<Icons.Chart/> },
-                { id:'processos', label:'Processos', icon:<Icons.Briefcase/> },
-                { id:'agenda',    label:'Agenda',    icon:<Icons.Agenda/> },
+                { id:'dashboard',  label:'Dashboard',  icon:<Icons.Chart/> },
+                { id:'processos',  label:'Processos',  icon:<Icons.Briefcase/> },
+                { id:'agenda',     label:'Agenda',     icon:<Icons.Agenda/> },
+                { id:'calendario', label:'Calendário', icon:<Icons.Calendar/> },
                 ...(role==='master'||role==='admin' ? [{ id:'equipe', label:'Equipe', icon:<Icons.Users/> }] : []),
               ].map(n => (
                 <button key={n.id} onClick={()=>setAba(n.id)} className="flex-1 py-3 flex flex-col items-center gap-1 transition"
@@ -2077,10 +2517,17 @@
             </div>
           </div>
 
-          <main className="w-full custom-scrollbar" style={{paddingLeft: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(16px,3vw,40px)', paddingRight: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(16px,3vw,40px)', paddingTop: (aba==='processos'||aba==='agenda') ? 0 : '28px', paddingBottom: (aba==='processos'||aba==='agenda') ? 0 : 'clamp(24px,4vw,48px)', flex:1, overflowY:'auto'}}>
+          <main className="w-full custom-scrollbar" style={{paddingLeft: (aba==='processos'||aba==='agenda'||aba==='calendario') ? 0 : 'clamp(16px,3vw,40px)', paddingRight: (aba==='processos'||aba==='agenda'||aba==='calendario') ? 0 : 'clamp(16px,3vw,40px)', paddingTop: (aba==='processos'||aba==='agenda'||aba==='calendario') ? 0 : '28px', paddingBottom: (aba==='processos'||aba==='agenda'||aba==='calendario') ? 0 : 'clamp(24px,4vw,48px)', flex:1, overflowY:'auto'}}>
             {calcModal && <CalculatorModal onClose={()=>setCalcModal(false)} />}
             {fichaModal && <FichaModal p={fichaModal} onClose={()=>setFichaModal(null)} />}
             {auditoriaModal && <AuditoriaModal isMaster={role === 'master'} onClose={()=>setAuditoriaModal(false)} />}
+            {agendaEventoModal && (
+              <AgendarCompromissoModal
+                processo={agendaEventoModal}
+                usuario={user}
+                onClose={()=>setAgendaEventoModal(null)}
+              />
+            )}
 
             {/* ── MODAL SENHA ── */}
             {modalSenha && (
@@ -2208,6 +2655,9 @@
 
             {/* ── AGENDA ── */}
             {aba === 'agenda' && <AgendaDiaria usuario={user} listaEquipe={listaEquipe} listaUsuarios={listaUsuarios} />}
+
+            {/* ── CALENDÁRIO ── */}
+            {aba === 'calendario' && <CalendarioTab usuario={user} />}
 
             {/* ── EQUIPE ── */}
             {aba === 'equipe' && (role === 'master' || role === 'admin') && (
@@ -2444,6 +2894,9 @@
                                 )}
                                 {role !== 'viewer' && (
                                   <>
+                                    <button onClick={()=>setAgendaEventoModal(p)} className="btn-icon" style={{width:28,height:28,color:'#7e22ce'}} title="Agendar Compromisso">
+                                      <div className="w-3.5 h-3.5"><Icons.Calendar/></div>
+                                    </button>
                                     <button onClick={()=>{setFormData({...initialForm,...p}); setEditingId(p.id); setModal(true);}} className="btn-icon" style={{width:28,height:28,color:'var(--navy-light)'}} title="Editar">
                                       <div className="w-3.5 h-3.5"><Icons.Edit/></div>
                                     </button>
@@ -2587,13 +3040,38 @@
 
                       <div>
                         <label className="label">Status Processual</label>
-                        <select className="input font-medium" value={formData.statusProcessual} onChange={e=>setF({statusProcessual: e.target.value})}>
-                          {getStatusGrupos(formData.ramo).map(g => (
-                            <optgroup key={g.grupo} label={g.grupo}>
-                              {g.itens.map(s => <option key={s} value={s}>{s}</option>)}
-                            </optgroup>
-                          ))}
-                        </select>
+                        <div className="flex gap-2 items-center">
+                          <select className="input font-medium" style={{flex:1}} value={formData.statusProcessual} onChange={e=>setF({statusProcessual: e.target.value})}>
+                            {getStatusGrupos(formData.ramo).map(g => (
+                              <optgroup key={g.grupo} label={g.grupo}>
+                                {g.itens.map(s => <option key={s} value={s}>{s}</option>)}
+                              </optgroup>
+                            ))}
+                          </select>
+                          {/* Botão de contingência WhatsApp */}
+                          {formData.telefone && (
+                            <button
+                              type="button"
+                              title="Enviar notificação de status via WhatsApp"
+                              onClick={() => {
+                                const proc = editingId
+                                  ? { ...formData, id: editingId }
+                                  : { ...formData, id: 'novo' };
+                                triggerWhatsAppNotification(proc, formData.statusProcessual);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold shrink-0 transition-all"
+                              style={{background:'#dcfce7',color:'#16a34a',border:'1.5px solid #bbf7d0',whiteSpace:'nowrap'}}
+                              onMouseOver={e=>{e.currentTarget.style.background='#bbf7d0';}}
+                              onMouseOut={e=>{e.currentTarget.style.background='#dcfce7';}}>
+                              <Icons.WhatsApp/> Notificar
+                            </button>
+                          )}
+                        </div>
+                        {TRADUCOES_JURIDICAS[formData.statusProcessual] && (
+                          <p className="text-xs mt-1.5 px-3 py-1.5 rounded-lg" style={{background:'var(--accent-light)',color:'var(--accent-dark)',border:'1px solid #fde68a'}}>
+                            💬 <em>{TRADUCOES_JURIDICAS[formData.statusProcessual]}</em>
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -2755,6 +3233,17 @@
                 {/* Modal footer */}
                 <div className="flex gap-3 px-7 py-5 shrink-0" style={{borderTop:'1px solid var(--border)', background:'var(--surface-2)'}}>
                   <button onClick={()=>{setModal(false); setEditingId(null);}} className="btn-ghost flex-1 justify-center">Cancelar</button>
+                  {editingId && (
+                    <button
+                      onClick={()=>{
+                        const proc = processos.find(p=>p.id===editingId) || {...formData, id:editingId};
+                        setAgendaEventoModal(proc);
+                      }}
+                      className="btn-ghost justify-center shrink-0"
+                      style={{borderColor:'#7e22ce', color:'#7e22ce', padding:'11px 16px', fontSize:12}}>
+                      <Icons.Calendar/> Agendar Compromisso
+                    </button>
+                  )}
                   <button onClick={salvar} className="btn-primary flex-2 justify-center" style={{flex:'2'}}>
                     <Icons.Check/> Salvar Processo
                   </button>
