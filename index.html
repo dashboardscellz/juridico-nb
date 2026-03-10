@@ -2179,7 +2179,8 @@
       const [novoMembro, setNovoMembro] = useState("");
       const [editingUser, setEditingUser] = useState(null);
       const [recentIds, setRecentIds] = useState(new Set());
-      const [pinnedId, setPinnedId] = useState(null);
+      // Lista ordenada de IDs fixados: o mais recente fica na frente (índice 0 = 1º lugar)
+      const [pinnedIds, setPinnedIds] = useState([]);
       const [agendaEventoModal, setAgendaEventoModal] = useState(null);
       const prevStatusRef = useRef({});
       const [pendingWhatsApp, setPendingWhatsApp] = useState(null); // { nome, tel, msg }
@@ -2372,7 +2373,8 @@
             targetId = ref.id;
           }
           if (targetId) {
-            setPinnedId(targetId);
+            // Empurra novo ID para o topo da fila, remove duplicata se já estava
+            setPinnedIds(prev => [targetId, ...prev.filter(id => id !== targetId)]);
             setRecentIds(prev => new Set([...prev, targetId]));
             setTimeout(() => setRecentIds(prev => { const n = new Set(prev); n.delete(targetId); return n; }), 4000);
           }
@@ -2413,12 +2415,18 @@
           return mB && mRe && mRa && mSt;
         });
         return [...filtrados].sort((a, b) => {
-          if (a.id === pinnedId) return -1;
-          if (b.id === pinnedId) return 1;
-          // Mantém ordem original do Firestore (já vem por criadoEm desc)
+          const ai = pinnedIds.indexOf(a.id);
+          const bi = pinnedIds.indexOf(b.id);
+          // Ambos pinados: o de índice menor (mais recente) vem primeiro
+          if (ai !== -1 && bi !== -1) return ai - bi;
+          // Só a está pinado
+          if (ai !== -1) return -1;
+          // Só b está pinado
+          if (bi !== -1) return 1;
+          // Nenhum pinado: mantém ordem original do Firestore (criadoEm desc)
           return 0;
         });
-      }, [processos, busca, filtroResponsavel, filtroRamo, filtroStatus, pinnedId]);
+      }, [processos, busca, filtroResponsavel, filtroRamo, filtroStatus, pinnedIds]);
 
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
