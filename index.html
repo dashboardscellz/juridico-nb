@@ -2247,9 +2247,9 @@
       useEffect(() => {
         if (!authOk) return;
         auth.signInAnonymously().catch(()=>{});
-        const unsubProc = db.collection(COL_PROCESSOS).orderBy('criadoEm','desc').onSnapshot(
+        const unsubProc = db.collection(COL_PROCESSOS).onSnapshot(
           snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))),
-          () => db.collection(COL_PROCESSOS).onSnapshot(snap => setProcessos(snap.docs.map(d => ({id: d.id, ...d.data()}))))
+          err => console.error("Erro ao carregar processos:", err)
         );
         const unsubEquipe = db.collection(COL_PROFISSIONAIS).doc('lista_atual').onSnapshot(doc => {
           if (doc.exists && doc.data().nomes) setListaEquipe(doc.data().nomes);
