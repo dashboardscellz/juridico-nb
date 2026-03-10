@@ -289,6 +289,20 @@
       font-weight: 600;
       border: 1px solid transparent;
     }
+    .badge-status {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      line-height: 1.35;
+      text-align: center;
+      max-width: 128px;
+      word-break: normal;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
 
     /* ── Table ── */
     .tbl thead th { padding: 12px 18px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); background:var(--surface-2); border-bottom:1px solid var(--border); }
@@ -2357,12 +2371,12 @@
             const ref = await db.collection(COL_PROCESSOS).add(dados);
             targetId = ref.id;
           }
-          setModal(false); setEditingId(null); setFormData(initialForm);
           if (targetId) {
             setPinnedId(targetId);
             setRecentIds(prev => new Set([...prev, targetId]));
             setTimeout(() => setRecentIds(prev => { const n = new Set(prev); n.delete(targetId); return n; }), 4000);
           }
+          setModal(false); setEditingId(null); setFormData(initialForm);
         } catch(e) { alert("Erro ao salvar: " + e.message); }
       };
       const apagar = async (id) => { if(confirm("Excluir este processo?")) await db.collection(COL_PROCESSOS).doc(id).delete(); };
@@ -2401,6 +2415,7 @@
         return [...filtrados].sort((a, b) => {
           if (a.id === pinnedId) return -1;
           if (b.id === pinnedId) return 1;
+          // Mantém ordem original do Firestore (já vem por criadoEm desc)
           return 0;
         });
       }, [processos, busca, filtroResponsavel, filtroRamo, filtroStatus, pinnedId]);
@@ -2893,7 +2908,7 @@
                             <td>
                               <div style={{display:'flex',alignItems:'center',gap:4}}>
                                 {isRose && <span className="arrow-rose">↑</span>}
-                                <span className="badge" style={{...stStyle, fontSize:10.5, whiteSpace:'normal', wordBreak:'break-word', maxWidth:110, lineHeight:1.35, textAlign:'center'}}>
+                                <span className="badge-status" style={{...stStyle, fontSize:10.5}}>
                                   {st}
                                 </span>
                               </div>
