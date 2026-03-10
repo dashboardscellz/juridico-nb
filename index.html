@@ -2179,8 +2179,7 @@
       const [novoMembro, setNovoMembro] = useState("");
       const [editingUser, setEditingUser] = useState(null);
       const [recentIds, setRecentIds] = useState(new Set());
-      // Lista ordenada de IDs fixados: o mais recente fica na frente (índice 0 = 1º lugar)
-      const [pinnedIds, setPinnedIds] = useState([]);
+      // pinnedAt agora vive no Firestore — sem estado local necessário
       const [agendaEventoModal, setAgendaEventoModal] = useState(null);
       const prevStatusRef = useRef({});
       const [pendingWhatsApp, setPendingWhatsApp] = useState(null); // { nome, tel, msg }
@@ -2343,7 +2342,7 @@
         if (role === 'viewer') return alert("Sem permissão para criar/editar processos.");
         try {
           const agora = new Date().toISOString();
-          const dados = {...formData, atualizadoEm: agora};
+          const dados = {...formData, atualizadoEm: agora, pinnedAt: agora};
           let targetId = editingId;
           let statusAnterior = null;
           let faseAnterior   = null;
@@ -2373,8 +2372,7 @@
             targetId = ref.id;
           }
           if (targetId) {
-            // Empurra novo ID para o topo da fila, remove duplicata se já estava
-            setPinnedIds(prev => [targetId, ...prev.filter(id => id !== targetId)]);
+            // recentIds só para animação visual (seta verde por 4s)
             setRecentIds(prev => new Set([...prev, targetId]));
             setTimeout(() => setRecentIds(prev => { const n = new Set(prev); n.delete(targetId); return n; }), 4000);
           }
@@ -2415,18 +2413,14 @@
           return mB && mRe && mRa && mSt;
         });
         return [...filtrados].sort((a, b) => {
-          const ai = pinnedIds.indexOf(a.id);
-          const bi = pinnedIds.indexOf(b.id);
-          // Ambos pinados: o de índice menor (mais recente) vem primeiro
-          if (ai !== -1 && bi !== -1) return ai - bi;
-          // Só a está pinado
-          if (ai !== -1) return -1;
-          // Só b está pinado
-          if (bi !== -1) return 1;
-          // Nenhum pinado: mantém ordem original do Firestore (criadoEm desc)
+          const pa = a.pinnedAt || a.criadoEm || '';
+          const pb = b.pinnedAt || b.criadoEm || '';
+          // Mais recentemente atualizado/criado vem primeiro
+          if (pa > pb) return -1;
+          if (pa < pb) return 1;
           return 0;
         });
-      }, [processos, busca, filtroResponsavel, filtroRamo, filtroStatus, pinnedIds]);
+      }, [processos, busca, filtroResponsavel, filtroRamo, filtroStatus]);
 
       if (!authOk) return <LoginScreen onLogin={handleLogin} />;
 
